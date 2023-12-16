@@ -4,7 +4,7 @@ import { Comment } from './comment.interface'
 export const commentApi = createApi({
     reducerPath: 'commentApi',
     baseQuery: fetchBaseQuery({
-        baseUrl: 'http://localhost:8080/comment'
+        baseUrl: 'https://databasedatn-8bp3hnthd-nvhoan11092003.vercel.app'
     }),
     tagTypes: ['Comment'],
     endpoints: (builder) => ({

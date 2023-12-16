@@ -2,35 +2,33 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import { Brand } from './brand.interface'
 import { log } from 'console'
 
-export const brandApi = createApi( {
+export const brandApi = createApi({
     reducerPath: 'brandApi',
-    baseQuery: fetchBaseQuery( {
-        baseUrl: 'http://localhost:8080/brand'
-    } ),
-    tagTypes: [ 'Brand' ],
-    endpoints: ( builder ) => ( {
-        getBrandList: builder.query( {
+    baseQuery: fetchBaseQuery({
+        baseUrl: 'https://databasedatn-8bp3hnthd-nvhoan11092003.vercel.app'
+    }),
+    tagTypes: ['Brand'],
+    endpoints: (builder) => ({
+        getBrandList: builder.query({
             query: () => ``,
-            providesTags: [ 'Brand' ]
-        } ),
-        getBrand: builder.query( {
-            query: ( id: string ) =>
-            {
-                const token = localStorage.getItem( "token" )
+            providesTags: ['Brand']
+        }),
+        getBrand: builder.query({
+            query: (id: string) => {
+                const token = localStorage.getItem("token")
                 return {
-                    url: `/${ id }`,
+                    url: `/${id}`,
                     method: 'GET',
                     headers: {
                         Authorization: "Bearer " + token,
                     },
                 }
             },
-            providesTags: [ 'Brand' ]
-        } ),
-        addBrand: builder.mutation<Brand[], Brand>( {
-            query: ( brand ) =>
-            {
-                const token = localStorage.getItem( "token" )
+            providesTags: ['Brand']
+        }),
+        addBrand: builder.mutation<Brand[], Brand>({
+            query: (brand) => {
+                const token = localStorage.getItem("token")
                 return {
                     url: ``,
                     method: 'POST',
@@ -40,14 +38,13 @@ export const brandApi = createApi( {
                     },
                 }
             },
-            invalidatesTags: [ 'Brand' ]
-        } ),
-        editBrand: builder.mutation<Brand[], Brand>( {
-            query: ( brand ) =>
-            {
-                const token = localStorage.getItem( "token" )
+            invalidatesTags: ['Brand']
+        }),
+        editBrand: builder.mutation<Brand[], Brand>({
+            query: (brand) => {
+                const token = localStorage.getItem("token")
                 return {
-                    url: `/${ brand._id }`,
+                    url: `/${brand._id}`,
                     method: 'PUT',
                     body: brand,
                     headers: {
@@ -55,24 +52,23 @@ export const brandApi = createApi( {
                     },
                 }
             },
-            invalidatesTags: [ 'Brand' ]
-        } ),
-        deleteBrand: builder.mutation<Brand[], string>( {
-            query: ( id ) =>
-            {
-                const token = localStorage.getItem( "token" )
+            invalidatesTags: ['Brand']
+        }),
+        deleteBrand: builder.mutation<Brand[], string>({
+            query: (id) => {
+                const token = localStorage.getItem("token")
                 return {
-                    url: `/${ id }`,
+                    url: `/${id}`,
                     method: 'DELETE',
                     headers: {
                         Authorization: "Bearer " + token,
                     },
                 }
             },
-            invalidatesTags: [ 'Brand' ],
-        } )
-    } )
+            invalidatesTags: ['Brand'],
+        })
+    })
 
-} )
+})
 
 export const { useAddBrandMutation, useDeleteBrandMutation, useEditBrandMutation, useGetBrandListQuery, useGetBrandQuery } = brandApi

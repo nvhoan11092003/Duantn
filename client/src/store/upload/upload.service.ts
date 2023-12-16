@@ -1,9 +1,9 @@
-import { createApi, fetchBaseQuery} from '@reduxjs/toolkit/query/react'
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 import { Image } from './upload.interface'
 export const uploadImagesApi = createApi({
-    reducerPath: 'uploadImagesApi', 
+    reducerPath: 'uploadImagesApi',
     baseQuery: fetchBaseQuery({
-        baseUrl: 'http://localhost:8080/'
+        baseUrl: 'https://databasedatn-8bp3hnthd-nvhoan11092003.vercel.app/'
     }),
     tagTypes: ['upload'],
     endpoints: (builder) => ({
@@ -23,8 +23,8 @@ export const uploadImagesApi = createApi({
             }),
             invalidatesTags: ['upload']
         }),
-        updateImage: builder.mutation<Image, {publicId: string, formData: FormData}>({
-            query: ({publicId,formData}) => ({
+        updateImage: builder.mutation<Image, { publicId: string, formData: FormData }>({
+            query: ({ publicId, formData }) => ({
                 url: `images/upload/${publicId}`,
                 method: 'PUT',
                 body: formData
@@ -34,4 +34,4 @@ export const uploadImagesApi = createApi({
     })
 })
 
-export const {useUploadImagesMutation, useUploadImageMutation, useUpdateImageMutation} = uploadImagesApi
+export const { useUploadImagesMutation, useUploadImageMutation, useUpdateImageMutation } = uploadImagesApi

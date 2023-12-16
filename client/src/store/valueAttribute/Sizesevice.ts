@@ -4,7 +4,7 @@ import { Size } from '../productVariant/productVariant.interface'
 export const sizeApi = createApi({
     reducerPath: 'sizeApi',
     baseQuery: fetchBaseQuery({
-        baseUrl: 'http://localhost:8080/size'
+        baseUrl: 'https://databasedatn-8bp3hnthd-nvhoan11092003.vercel.app/size'
     }),
     tagTypes: ['Size'],
     endpoints: (builder) => ({

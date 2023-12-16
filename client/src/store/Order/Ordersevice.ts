@@ -1,16 +1,15 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 
-export const orderApi = createApi( {
+export const orderApi = createApi({
     reducerPath: 'orderApi',
-    baseQuery: fetchBaseQuery( {
-        baseUrl: 'http://localhost:8080/order'
-    } ),
-    tagTypes: [ 'Order' ],
-    endpoints: ( builder ) => ( {
+    baseQuery: fetchBaseQuery({
+        baseUrl: 'https://databasedatn-8bp3hnthd-nvhoan11092003.vercel.app'
+    }),
+    tagTypes: ['Order'],
+    endpoints: (builder) => ({
 
-        totalOrderaday: builder.mutation( {
-            query: ( { startDate, endDate } ) => 
-            {
+        totalOrderaday: builder.mutation({
+            query: ({ startDate, endDate }) => {
                 const body = { startDate, endDate }
                 return {
                     url: `totalOrderaday`,
@@ -18,11 +17,10 @@ export const orderApi = createApi( {
                     body: body
                 }
             },
-            invalidatesTags: [ 'Order' ]
-        } ),
-        totalOrderamonth: builder.mutation( {
-            query: ( { startYear, endYear } ) => 
-            {
+            invalidatesTags: ['Order']
+        }),
+        totalOrderamonth: builder.mutation({
+            query: ({ startYear, endYear }) => {
                 const body = { startYear, endYear }
                 return {
                     url: `totalOrderamonth`,
@@ -30,11 +28,10 @@ export const orderApi = createApi( {
                     body: body
                 }
             },
-            invalidatesTags: [ 'Order' ]
-        } ),
-        totalproductamonth: builder.mutation( {
-            query: ( { startYear, endYear } ) => 
-            {
+            invalidatesTags: ['Order']
+        }),
+        totalproductamonth: builder.mutation({
+            query: ({ startYear, endYear }) => {
                 const body = { startYear, endYear }
                 return {
                     url: `productsmonthSold`,
@@ -42,11 +39,10 @@ export const orderApi = createApi( {
                     body: body
                 }
             },
-            invalidatesTags: [ 'Order' ]
-        } ),
-        totalProductaday: builder.mutation( {
-            query: ( { startDate, endDate } ) => 
-            {
+            invalidatesTags: ['Order']
+        }),
+        totalProductaday: builder.mutation({
+            query: ({ startDate, endDate }) => {
                 const body = { startDate, endDate }
                 return {
                     url: `productsSold`,
@@ -54,11 +50,11 @@ export const orderApi = createApi( {
                     body: body
                 }
             },
-            invalidatesTags: [ 'Order' ]
-        } ),
+            invalidatesTags: ['Order']
+        }),
 
-    } )
+    })
 
-} )
+})
 
 export const { useTotalOrderadayMutation, useTotalProductadayMutation, useTotalproductamonthMutation, useTotalOrderamonthMutation } = orderApi
