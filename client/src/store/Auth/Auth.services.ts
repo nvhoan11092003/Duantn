@@ -10,7 +10,7 @@ const authApi = createApi({
     reducerPath: "auth",
     tagTypes: ["Auth"],
     baseQuery: fetchBaseQuery({
-        baseUrl: "https://databasedatn-8bp3hnthd-nvhoan11092003.vercel.app",
+        baseUrl: "https://databasedatn.vercel.app",
 
     }),
     endpoints: (builder) => ({

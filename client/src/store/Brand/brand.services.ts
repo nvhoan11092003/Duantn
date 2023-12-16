@@ -5,7 +5,7 @@ import { log } from 'console'
 export const brandApi = createApi({
     reducerPath: 'brandApi',
     baseQuery: fetchBaseQuery({
-        baseUrl: 'https://databasedatn-8bp3hnthd-nvhoan11092003.vercel.app'
+        baseUrl: 'https://databasedatn.vercel.app'
     }),
     tagTypes: ['Brand'],
     endpoints: (builder) => ({

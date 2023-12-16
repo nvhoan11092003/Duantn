@@ -5,7 +5,7 @@ import { Iproductdata } from './product.interface'
 export const productApi = createApi({
     reducerPath: 'productApi',
     baseQuery: fetchBaseQuery({
-        baseUrl: 'https://databasedatn-8bp3hnthd-nvhoan11092003.vercel.app/products'
+        baseUrl: 'https://databasedatn.vercel.app/products'
     }),
     tagTypes: ['product'],
     endpoints: (builder) => ({
@@ -18,7 +18,7 @@ export const productApi = createApi({
         }),
         locProducts: builder.query({
             query: ({ category, brand, minPrice, maxPrice }) => ({
-                url: `https://databasedatn-8bp3hnthd-nvhoan11092003.vercel.app/auth/product?category=${category}&brand=${brand}&minPrice=${minPrice}&maxPrice=${maxPrice}`,
+                url: `https://databasedatn.vercel.app/auth/product?category=${category}&brand=${brand}&minPrice=${minPrice}&maxPrice=${maxPrice}`,
                 method: 'GET',
                 providesTags: ['product']
             })
@@ -59,7 +59,7 @@ export const productApi = createApi({
         }),
         // ProductVariant: builder.query<IProductVariant[], void>( {
         //     query: () => ( {
-        //         url: `http://localhost:8080/productvariant`,
+        //         url: `https://databasedatn.vercel.app/productvariant`,
         //         providesTags: [ 'product' ],
         //     } ),
         // } ),
@@ -67,7 +67,7 @@ export const productApi = createApi({
 
         sortByProduct: builder.query({
             query: () => ({
-                url: 'https://databasedatn-8bp3hnthd-nvhoan11092003.vercel.app/products',
+                url: 'https://databasedatn.vercel.app/products',
                 method: 'GET',
                 provideTags: ['product'],
                 params: {

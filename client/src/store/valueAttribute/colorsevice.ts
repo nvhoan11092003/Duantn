@@ -4,7 +4,7 @@ import { Color } from '../productVariant/productVariant.interface'
 export const colorApi = createApi({
     reducerPath: 'colorApi',
     baseQuery: fetchBaseQuery({
-        baseUrl: 'https://databasedatn-8bp3hnthd-nvhoan11092003.vercel.app/color'
+        baseUrl: 'https://databasedatn.vercel.app/color'
     }),
     tagTypes: ['Color'],
     endpoints: (builder) => ({
