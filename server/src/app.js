@@ -61,5 +61,6 @@ app.use( "/payment", payment );
 
 
 
-export default viteNodeApp = app;
+export const viteNodeApp = app;
+export default app
 // 
