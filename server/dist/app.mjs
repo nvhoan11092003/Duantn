@@ -1,8 +1,8 @@
 import dotenv, { config } from "dotenv";
+import express from "express";
 import morgan from "morgan";
 import cors from "cors";
 import mongoose, { Schema } from "mongoose";
-import express$g from "express";
 import jwt from "jsonwebtoken";
 import joi from "joi";
 import bcrypt from "bcrypt";
@@ -64,12 +64,6 @@ const userSchema = new mongoose.Schema(
       required: false
     },
     cart: { type: mongoose.Schema.Types.ObjectId, ref: "Cart" },
-    cards: [
-      {
-        type: mongoose.Types.ObjectId,
-        ref: "Card"
-      }
-    ],
     wishList: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
     vouchers: [{
       type: mongoose.Schema.Types.ObjectId,
@@ -87,12 +81,6 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false
     },
-    favorites: [
-      {
-        type: mongoose.Types.ObjectId,
-        ref: "Favorite"
-      }
-    ],
     comments: [
       {
         type: mongoose.Types.ObjectId,
@@ -212,6 +200,13 @@ const categorySchema$1 = new mongoose.Schema(
   { timestamps: true, versionKey: false }
 );
 const Category = mongoose.model("Category", categorySchema$1);
+const brandSchema$1 = new mongoose.Schema({
+  title: {
+    type: String,
+    require: true
+  }
+}, { timestamps: true });
+const Brand = mongoose.model("Brand", brandSchema$1);
 const productVariantSchema$2 = new mongoose.Schema(
   {
     size: {
@@ -355,6 +350,9 @@ const getAll$6 = async (req, res) => {
     } else {
       query = query.select("-__v");
     }
+    if (req.query.category) {
+      queryObj.category = req.query.category;
+    }
     const page = req.query.page;
     const limit = req.query.limit;
     const skip = (page - 1) * limit;
@@ -365,7 +363,7 @@ const getAll$6 = async (req, res) => {
         throw new Error("This page does not exist");
     }
     console.log(page, limit, skip);
-    query = query.populate("category").populate("brand").populate("ProductVariants");
+    query = query.populate("category").populate("brand").populate("ProductVariants").sort({ createdAt: -1 });
     const products = await query;
     res.status(200).json({
       products
@@ -374,6 +372,32 @@ const getAll$6 = async (req, res) => {
     res.status(500).json({
       message: "Server error: " + error.message
     });
+  }
+};
+const locproduct = async (req, res) => {
+  const { category, brand, minPrice, maxPrice } = req.query;
+  try {
+    const queryConditions = {};
+    if (category) {
+      const foundCategory = await Category.findOne({ title: category });
+      if (foundCategory) {
+        queryConditions.category = foundCategory._id;
+      }
+    }
+    if (brand) {
+      const foundBrand = await Brand.findOne({ title: brand });
+      if (foundBrand) {
+        queryConditions.brand = foundBrand._id;
+      }
+    }
+    if (minPrice && maxPrice) {
+      queryConditions.price = { $gte: minPrice, $lte: maxPrice };
+    }
+    console.log(queryConditions);
+    const products = await Product.find(queryConditions).populate("category").populate("brand");
+    res.status(200).json({ products });
+  } catch (error) {
+    res.status(500).json({ message: "Server error: " + error.message });
   }
 };
 const getOne$6 = async (req, res) => {
@@ -481,7 +505,7 @@ const addTowishList = async (req, res) => {
     throw new Error(error);
   }
 };
-const router$f = express$g.Router();
+const router$f = express.Router();
 router$f.get("/", getAll$6);
 router$f.get("/:id", getOne$6);
 router$f.post("/", create$5);
@@ -953,7 +977,7 @@ const orderSchema$1 = new mongoose.Schema(
       // Mặc định là false, khi không có yêu cầu hủy
     },
     paymentIntent: {},
-    Phone: {
+    phone: {
       type: String
     },
     Address: {
@@ -1018,6 +1042,15 @@ const voucherSchema$1 = new mongoose.Schema({
   }
 }, { versionKey: false, timeseries: true });
 const Voucher = mongoose.model("voucher", voucherSchema$1);
+joi.object({
+  name: joi.string().required().messages(errorMessages("Tên")),
+  email: joi.string().email().required().messages(errorMessages("email")),
+  phone: joi.string().required().messages(errorMessages("số điện thoại")),
+  address: joi.string().required().messages(errorMessages("thành phố")),
+  Address: joi.string().required().messages(errorMessages("huyện")),
+  country: joi.string().required().messages(errorMessages("làng,ngõ xóm")),
+  role: joi.string().required().messages(errorMessages("quyền"))
+});
 config();
 const register = async (req, res) => {
   try {
@@ -1180,6 +1213,47 @@ const updateUser = async (req, res) => {
     return res.status(500).json({
       message: "Lỗi server " + error.message
     });
+  }
+};
+const updateUserAdmin = async (req, res) => {
+  const userId = req.params.id;
+  const {
+    name,
+    email: newEmail,
+    // Đổi tên biến email thành newEmail để không ghi đè lên biến email gốc
+    Address,
+    address,
+    role,
+    country,
+    phone
+  } = req.body;
+  try {
+    const existingUserWithEmail = await User.findOne({ email: newEmail });
+    if (existingUserWithEmail && existingUserWithEmail._id.toString() !== userId) {
+      return res.status(400).json({ message: "Email đã tồn tại trong hệ thống" });
+    }
+    const user = await User.findByIdAndUpdate(
+      userId,
+      {
+        $set: {
+          name,
+          email: newEmail,
+          // Sử dụng newEmail thay vì email ban đầu
+          Address,
+          address,
+          role,
+          country,
+          phone
+        }
+      },
+      { new: true }
+    );
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+    return res.status(200).json({ user });
+  } catch (error) {
+    return res.status(500).json({ message: "Đã xảy ra lỗi khi cập nhật thông tin người dùng" });
   }
 };
 const logIn = async (req, res) => {
@@ -1881,13 +1955,18 @@ const confirmCancelOrder = async (req, res) => {
   const { id } = req.params;
   const { isConfirmed } = req.body;
   req.user;
-  const { _id } = req.user;
+  req.user;
   try {
-    const user = await User.findById(_id);
     const orderToCancel = await Order.findById(id);
     if (!orderToCancel) {
       return res.status(404).json({ error: "Đơn hàng không tồn tại." });
     }
+    const userId = orderToCancel.userId;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy thông tin người dùng" });
+    }
+    const userEmail = user.email;
     if (isConfirmed) {
       const updatedStatusHistory = orderToCancel.statusHistory || [];
       updatedStatusHistory.push({
@@ -1929,7 +2008,7 @@ const confirmCancelOrder = async (req, res) => {
       });
       const mailOptions = {
         from: "yourEmail@gmail.com",
-        to: "giangnhph23819@fpt.edu.vn",
+        to: userEmail,
         // Email người dùng đăng nhập
         subject: "Xác nhận hủy đơn hàng",
         text: `Đơn hàng ${id} đã được hủy.`
@@ -1967,7 +2046,7 @@ const confirmCancelOrder = async (req, res) => {
       });
       const mailOptions = {
         from: "yourEmail@gmail.com",
-        to: "giangnhph23819@fpt.edu.vn",
+        to: userEmail,
         // Email người dùng đăng nhập
         subject: "Từ chối hủy đơn hàng",
         text: `Yêu cầu hủy đơn hàng ${id} không được chấp nhận.`
@@ -1994,17 +2073,52 @@ const getCancelledOrders = async (req, res) => {
   }
 };
 const getCancelledtrueOrders = async (req, res) => {
-  const { status, startDate, endDate } = req.body;
+  const { status, startDates, endDates } = req.body;
   try {
-    let query = { status };
-    if (!startDate || !endDate) {
-      const orders = await Order.find(query);
-      res.json(orders);
+    let query = {};
+    if (status && startDates && endDates) {
+      query.createdAt = { $gte: new Date(startDates), $lte: new Date(endDates) };
+      query.status = status;
+    } else if (startDates && endDates) {
+      query.createdAt = { $gte: new Date(startDates), $lte: new Date(endDates) };
+    } else if (status) {
+      query.status = status;
     } else {
-      query.createdAt = { $gte: new Date(startDate), $lte: new Date(endDate) };
-      const orders = await Order.find(query);
-      res.json(orders);
+      return res.status(400).json({ error: "Vui lòng cung cấp ít nhất một trường thông tin." });
     }
+    const orders = await Order.find(query).populate("userId");
+    const totalOrders = orders.length;
+    res.json({ orders, totalOrders });
+  } catch (error) {
+    return res.status(500).json({ error: "Lỗi server: " + error.message });
+  }
+};
+const findOrderByid = async (req, res) => {
+  const { orderId } = req.body;
+  try {
+    if (!orderId) {
+      return res.status(400).json({ error: "Vui lòng cung cấp ID đơn hàng." });
+    }
+    const foundOrder = await Order.findOne({ "paymentIntent.id": orderId }).populate("userId");
+    if (!foundOrder) {
+      return res.status(404).json({ error: "Không tìm thấy đơn hàng với ID này trong paymentIntent." });
+    }
+    res.json(foundOrder);
+  } catch (error) {
+    return res.status(500).json({ error: "Lỗi server: " + error.message });
+  }
+};
+const findOrderByPhone = async (req, res) => {
+  const { phone } = req.body;
+  try {
+    if (!phone) {
+      return res.status(400).json({ error: "Vui lòng cung cấp số điện thoại đơn hàng." });
+    }
+    const foundOrder = await Order.find({ phone }).populate("userId");
+    if (!foundOrder) {
+      return res.status(404).json({ error: "Không tìm thấy đơn hàng với ID này trong paymentIntent." });
+    }
+    res.json(foundOrder);
   } catch (error) {
     return res.status(500).json({ error: "Lỗi server: " + error.message });
   }
@@ -2123,9 +2237,40 @@ const cancleOrder = async (req, res) => {
     if (!orders) {
       return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
     }
+    const userId = orders.userId;
+    console.log(userId);
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy thông tin người dùng" });
+    }
+    const userEmail = user.email;
     if (orders.status == "Đã hoàn thành" || orders.status == "Đã hủy") {
       return res.status(400).json({ message: "Không thể thay đổi trạng thái đơn hàng này " });
     }
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: "thanhnvph26404@gmail.com",
+        // Email của bạn
+        pass: "ricjggvzlskbtsxl"
+        // Mật khẩu email của bạn
+      }
+    });
+    const mailOptions = {
+      from: "your_email@example.com",
+      // Địa chỉ email của bạn
+      to: userEmail,
+      // Sử dụng thông tin email từ đơn hàng
+      subject: "Thông báo: Đơn hàng đã được hủy",
+      text: "Đơn hàng của bạn đã được hủy thành công. Chi tiết lý do: " + cancelReason
+    };
+    transporter.sendMail(mailOptions, function(error, info) {
+      if (error) {
+        console.error("Lỗi khi gửi email:", error);
+      } else {
+        console.log("Email thông báo đã được gửi: " + info.response);
+      }
+    });
     orders.cancelReason = cancelReason;
     orders.status = "Đã hủy";
     console.log(cancelReason);
@@ -2327,8 +2472,7 @@ const saveVoucherToUser = async (req, res) => {
     return res.status(500).json({ message: "Đã xảy ra lỗi khi cập nhật đơn hàng" });
   }
 };
-const express$f = require("express");
-const router$e = express$f.Router();
+const router$e = express.Router();
 router$e.post("/register", register);
 router$e.post("/login", logIn);
 router$e.post("/add-to-cart", authMiddlware, addToCart);
@@ -2341,6 +2485,7 @@ router$e.get("/getOneUser/:id", authMiddlware, isAdmin, getOneUser);
 router$e.delete("/removeUser/:id", removeUser);
 router$e.post("/get-user-token", authMiddlware, getUserByToken);
 router$e.put("/updateUser", authMiddlware, updateUser);
+router$e.put("/updateUserAdmin/:id", authMiddlware, updateUserAdmin);
 router$e.delete("/emptyCart", authMiddlware, emptyCart);
 router$e.put("/update-order/:id", authMiddlware, updateOrderStatus);
 router$e.post("/creatOrder", authMiddlware, createOrder$1);
@@ -2348,6 +2493,8 @@ router$e.get("/getOrder", authMiddlware, getOrders);
 router$e.get("/getoneOrder/:id", authMiddlware, getoneOrders);
 router$e.get("/getcancletrueOrder", authMiddlware, getCancelledOrders);
 router$e.post("/getStatusOrder", authMiddlware, getCancelledtrueOrders);
+router$e.post("/getIdOrder", authMiddlware, findOrderByid);
+router$e.post("/getphoneOrder", authMiddlware, findOrderByPhone);
 router$e.delete("/removeWishList/:id", authMiddlware, removeWishList);
 router$e.get("/getAllOrder", authMiddlware, getAllOrders$1);
 router$e.get("/getCart", authMiddlware, getUserCart);
@@ -2364,6 +2511,7 @@ router$e.post("/create_payment_url", authMiddlware, createPaymentUrl);
 router$e.get("/vnpay_return", vnpayReturn);
 router$e.put("/saveVoucher", authMiddlware, saveVoucherToUser);
 router$e.get("/getvouchers", authMiddlware, getvoucher);
+router$e.get("/product", locproduct);
 dotenv.config();
 const loginMiddleware = async (req, res, next) => {
   try {
@@ -2402,8 +2550,7 @@ const loginMiddleware = async (req, res, next) => {
     });
   }
 };
-const express$e = require("express");
-const router$d = express$e.Router();
+const router$d = express.Router();
 router$d.get("/", getAll$5);
 router$d.get("/:id", getOne$5);
 router$d.post("/createVoucher", creatVoucher), router$d.put("/:id", updateVoucher);
@@ -2586,8 +2733,7 @@ const changePassword = async (req, res) => {
     });
   }
 };
-const express$d = require("express");
-const router$c = express$d.Router();
+const router$c = express.Router();
 router$c.post("/forgot-password", getSecurityCode);
 router$c.post("/reset-password", resetPassword);
 router$c.post("/send-code", authMiddlware, getCode);
@@ -2786,16 +2932,14 @@ const getCategoryProduct = async (req, res) => {
     res.status(500).json({ message: "Đã có lỗi xảy ra khi lấy sản phẩm từ danh mục." });
   }
 };
-const express$c = require("express");
-const router$b = express$c.Router();
+const router$b = express.Router();
 router$b.get("/", getAll$4);
 router$b.get("/:id", getOne$4);
 router$b.post("/", create$4);
 router$b.patch("/:id", update$4);
 router$b.delete("/:id", remove$4);
 router$b.get("/getproduct/:id", getCategoryProduct);
-const express$b = require("express");
-const router$a = express$b.Router();
+const router$a = express.Router();
 const storage = new CloudinaryStorage({
   cloudinary: v2,
   params: {
@@ -2861,16 +3005,8 @@ const creatContact = async (req, res) => {
     });
   }
 };
-const express$a = require("express");
-const router$9 = express$a.Router();
+const router$9 = express.Router();
 router$9.post("/creatContact", creatContact);
-const brandSchema$1 = new mongoose.Schema({
-  title: {
-    type: String,
-    require: true
-  }
-}, { timestamps: true });
-const Brand = mongoose.model("Brand", brandSchema$1);
 const brandSchema = joi.object({
   title: joi.string().required().messages(errorMessages("tên thương hiệu  "))
 });
@@ -2974,8 +3110,7 @@ const deleteBrand = async (req, res) => {
     });
   }
 };
-const express$9 = require("express");
-const router$8 = express$9.Router();
+const router$8 = express.Router();
 router$8.get("/", getAllBrand);
 router$8.get("/:id", authMiddlware, isAdmin, getOneBrand);
 router$8.post("/", creatBrand);
@@ -3092,8 +3227,7 @@ const update$3 = async (req, res) => {
     });
   }
 };
-const express$8 = require("express");
-const router$7 = express$8.Router();
+const router$7 = express.Router();
 router$7.get("/", getAll$3);
 router$7.get("/:id", getOne$3);
 router$7.post("/", create$3);
@@ -3234,8 +3368,7 @@ const update$2 = async (req, res) => {
     });
   }
 };
-const express$7 = require("express");
-const router$6 = express$7.Router();
+const router$6 = express.Router();
 router$6.get("/:id", getOne$2);
 router$6.get("/", getAll$2);
 router$6.get("/byidatribute/:id", getbyidatribute);
@@ -3368,8 +3501,7 @@ const update$1 = async (req, res) => {
     });
   }
 };
-const express$6 = require("express");
-const router$5 = express$6.Router();
+const router$5 = express.Router();
 router$5.get("/", getAll$1);
 router$5.get("/:id", getOne$1);
 router$5.post("/", create$1);
@@ -3491,13 +3623,250 @@ const getOneOrder = async (req, res) => {
     res.status(500).json({ message: "Lỗi server: " + error.message });
   }
 };
-const express$5 = require("express");
-const router$4 = express$5.Router();
+const calculateTotalAmount = async (req, res) => {
+  try {
+    const orders = await Order.find({
+      status: { $nin: ["Đã hủy", "Đã hoàn tiền"] }
+    });
+    let totalAmount = 0;
+    orders.forEach((order) => {
+      totalAmount += order.paymentIntent.amount;
+    });
+    res.json({
+      totalAmount
+    });
+  } catch (error) {
+    console.error("Lỗi khi tính tổng số tiền:", error);
+    return 0;
+  }
+};
+const calculatetotalAmountday = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.body;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const datesInRange = [];
+    const currentDate = new Date(start);
+    while (currentDate <= end) {
+      datesInRange.push(new Date(currentDate));
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    const result = await Order.aggregate([
+      {
+        $match: {
+          status: { $nin: ["Đã hủy", "Đã hoàn tiền"] },
+          createdAt: {
+            $gte: new Date(startDate),
+            $lt: new Date(endDate)
+          }
+        }
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          totalAmount: { $sum: "$paymentIntent.amount" }
+        }
+      },
+      {
+        $sort: { _id: 1 }
+        // Sắp xếp theo ngày tăng dần
+      }
+    ]);
+    const logData = {};
+    result.forEach((item) => {
+      logData[item._id] = item.totalAmount;
+    });
+    console.log("Tất cả các ngày trong khoảng thời gian:");
+    console.log(datesInRange);
+    console.log("Tổng tiền từng ngày trong khoảng thời gian:");
+    console.log(logData);
+    datesInRange.forEach((date) => {
+      const dateString = date.toISOString().split("T")[0];
+      if (!logData.hasOwnProperty(dateString)) {
+        logData[dateString] = 0;
+      }
+    });
+    const dailyTotals = datesInRange.map((date) => {
+      const dateString = date.toISOString().split("T")[0];
+      return {
+        _id: dateString,
+        totalAmount: logData[dateString]
+      };
+    });
+    console.log("Tổng tiền từng ngày trong khoảng thời gian sau khi kiểm tra:");
+    console.log(logData);
+    const totalAmountInRange = Object.values(logData).reduce((total, amount) => total + amount, 0);
+    console.log("Tổng tổng tiền trong khoảng thời gian:", totalAmountInRange);
+    res.json({ dailyTotals, logData, totalAmountInRange });
+  } catch (error) {
+    console.error("Lỗi khi lấy tổng tiền từng ngày trong khoảng thời gian:", error);
+    res.status(500).json({ error: "Đã xảy ra lỗi khi lấy tổng tiền từng ngày trong khoảng thời gian" });
+  }
+};
+const calculatetotalAmountmonth = async (req, res) => {
+  try {
+    const { startYear, endYear } = req.body;
+    const startMonth = startYear.substring(5);
+    const endMonth = endYear.substring(5);
+    const startDate = /* @__PURE__ */ new Date(`${startYear}-01T00:00:00.000Z`);
+    const endDate = /* @__PURE__ */ new Date(`${endYear}-31T23:59:59.999Z`);
+    const result = await Order.aggregate([
+      {
+        $match: {
+          status: { $nin: ["Đã hủy", "Đã hoàn tiền"] },
+          "createdAt": {
+            $gte: startDate,
+            $lt: endDate
+          }
+        }
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+          totalAmount: { $sum: "$paymentIntent.amount" }
+        }
+      }
+    ]);
+    const finalData = [];
+    const currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+      const formattedMonth = currentDate.toISOString().slice(0, 7);
+      const foundMonth = result.find((item) => item._id === formattedMonth);
+      if (currentDate >= startDate && currentDate <= endDate) {
+        if (foundMonth) {
+          finalData.push({ month: formattedMonth, totalAmount: foundMonth.totalAmount });
+        } else {
+          finalData.push({ month: formattedMonth, totalAmount: 0 });
+        }
+      }
+      currentDate.setMonth(currentDate.getMonth() + 1);
+    }
+    const totalAmountAllMonths = finalData.reduce((total, monthData) => total + monthData.totalAmount, 0);
+    console.log("Tổng tổng tiền trong khoảng thời gian:", totalAmountAllMonths);
+    res.json({ result: finalData, totalAmountAllMonths });
+  } catch (error) {
+    console.error("Lỗi khi lấy tổng tiền theo khoảng thời gian:", error);
+    res.status(500).json({ error: "Đã xảy ra lỗi khi lấy tổng tiền theo khoảng thời gian" });
+  }
+};
+const calculatetotalAmountyear = async (req, res) => {
+  try {
+    const { year } = req.body;
+    const monthlyTotal = [];
+    for (let month = 1; month <= 12; month++) {
+      let endMonth = month + 1;
+      let endYear = year;
+      if (month === 12) {
+        endMonth = 1;
+        endYear++;
+      }
+      const result = await Order.aggregate([
+        {
+          $match: {
+            status: { $nin: ["Đã hủy", "Đã hoàn tiền"] },
+            "createdAt": {
+              $gte: /* @__PURE__ */ new Date(`${year}-${month}-01T00:00:00.000Z`),
+              $lt: /* @__PURE__ */ new Date(`${endYear}-${endMonth}-01T00:00:00.000Z`)
+            }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            totalAmount: { $sum: "$paymentIntent.amount" }
+          }
+        }
+      ]);
+      console.log(result);
+      monthlyTotal.push({ month, totalAmount: result.length > 0 ? result[0].totalAmount : 0 });
+    }
+    res.json({ year, monthlyTotal });
+  } catch (error) {
+    console.error("Lỗi khi lấy tổng tiền từng tháng:", error);
+    res.status(500).json({ error: "Đã xảy ra lỗi khi lấy tổng tiền từng tháng" });
+  }
+};
+const calculateTotalProductsSold = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.body;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const orders = await Order.find({
+      createdAt: {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate)
+      },
+      status: { $nin: ["Đã hủy", "Đã hoàn tiền"] }
+    });
+    const productsSoldPerDay = {};
+    orders.forEach((order) => {
+      const date = order.createdAt.toISOString().split("T")[0];
+      if (!productsSoldPerDay[date]) {
+        productsSoldPerDay[date] = 0;
+      }
+      order.products.forEach((product) => {
+        productsSoldPerDay[date] += product.quantity;
+      });
+    });
+    const formattedData = Object.keys(productsSoldPerDay).map((date) => ({
+      aday: date,
+      totalproductslod: productsSoldPerDay[date]
+    }));
+    console.log("Số lượng sản phẩm bán được theo từng ngày:", formattedData);
+    res.json({ productsSoldPerDay: formattedData });
+  } catch (error) {
+    console.error("Đã xảy ra lỗi khi tính toán số lượng sản phẩm:", error);
+    res.status(500).json({ error: "Đã xảy ra lỗi khi tính toán số lượng sản phẩm" });
+  }
+};
+const calculateProductsSoldPerMonth = async (req, res) => {
+  try {
+    const { startYear, endYear } = req.body;
+    const startMonth = startYear.substring(5);
+    const endMonth = endYear.substring(5);
+    const startDate = /* @__PURE__ */ new Date(`${startYear}-01T00:00:00.000Z`);
+    const endDate = /* @__PURE__ */ new Date(`${endYear}-31T23:59:59.999Z`);
+    const orders = await Order.find({
+      createdAt: {
+        $gte: startDate,
+        $lte: endDate
+      },
+      status: { $nin: ["Đã hủy", "Đã hoàn tiền"] }
+    });
+    const monthlyProductsSold = {};
+    orders.forEach((order) => {
+      const orderMonth = order.createdAt.toISOString().substring(0, 7);
+      order.products.forEach((product) => {
+        if (!monthlyProductsSold[orderMonth]) {
+          monthlyProductsSold[orderMonth] = 0;
+        }
+        monthlyProductsSold[orderMonth] += product.quantity;
+      });
+    });
+    const formattedMonthlyProducts = Object.keys(monthlyProductsSold).map((month) => ({
+      month,
+      totalProduct: monthlyProductsSold[month]
+    }));
+    console.log("Số sản phẩm bán được từng tháng:");
+    console.log(formattedMonthlyProducts);
+    res.json({ monthlyProductsSold: formattedMonthlyProducts });
+  } catch (error) {
+    console.error("Lỗi khi tính tổng số sản phẩm bán:", error);
+    res.status(500).json({ error: "Đã xảy ra lỗi khi tính tổng số sản phẩm bán" });
+  }
+};
+const router$4 = express.Router();
 router$4.post("/create", authMiddlware, createOrder);
 router$4.get("/list", getAllOrders);
 router$4.get("/get/:id", getOneOrder);
 router$4.put("/update/:id", updateOrder);
 router$4.delete("/delete/:id", deleteOrder);
+router$4.get("/totalOrder", calculateTotalAmount);
+router$4.post("/totalOrderaday", calculatetotalAmountday);
+router$4.post("/totalOrderamonth", calculatetotalAmountmonth);
+router$4.post("/totalOrderyear", calculatetotalAmountyear);
+router$4.post("/productsSold", calculateTotalProductsSold);
+router$4.post("/productsmonthSold", calculateProductsSoldPerMonth);
 const sizeSchema$1 = joi.object({
   size: joi.string().required().messages(errorMessages("size"))
 });
@@ -3609,8 +3978,7 @@ const update = async (req, res) => {
     });
   }
 };
-const express$4 = require("express");
-const router$3 = express$4.Router();
+const router$3 = express.Router();
 router$3.get("/", getAll);
 router$3.get("/:id", getOne);
 router$3.post("/", create);
@@ -3773,8 +4141,7 @@ const deleteComment = async (req, res) => {
     });
   }
 };
-const express$3 = require("express");
-const router$2 = express$3.Router();
+const router$2 = express.Router();
 router$2.get("/", getAllComment);
 router$2.get("/byidproduct/:id", getCommentbyidproduct);
 router$2.get("/:id", getOneComment);
@@ -3814,12 +4181,31 @@ const findProductsSoldOverTwenty = async (req, res) => {
     });
   }
 };
-const express$2 = require("express");
-const router$1 = express$2.Router();
+const productSold = async (req, res) => {
+  try {
+    const mostSoldProducts = await Product.find().sort({ sold: -1 }).limit(10);
+    res.status(200).json({ mostSoldProducts });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch most sold products" });
+  }
+};
+const productsbysalesrange = async (req, res) => {
+  const { lowerBound, upperBound } = req.body;
+  try {
+    const productsInSalesRange = await Product.find({
+      sold: { $gte: lowerBound, $lte: upperBound }
+    });
+    res.status(200).json({ productsInSalesRange });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch most sold products" });
+  }
+};
+const router$1 = express.Router();
 router$1.get("/", findProductsDiscounted);
 router$1.get("/sold", findProductsSoldOverTwenty);
-const express$1 = require("express");
-const router = express$1.Router();
+router$1.get("/productsold", productSold);
+router$1.get("/products-by-sales-range", productsbysalesrange);
+const router = express.Router();
 config();
 function sortObject(obj) {
   let sorted = {};
@@ -3908,7 +4294,6 @@ router.get("/vnpay_return", function(req, res, next) {
     res.render("success", { code: "97" });
   }
 });
-const express = require("express");
 const app = express();
 dotenv.config();
 connectDB(process.env.MONGO_URI);
