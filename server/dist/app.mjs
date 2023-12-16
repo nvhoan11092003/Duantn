@@ -15,7 +15,7 @@ import crypto$1 from "crypto";
 import { v2 } from "cloudinary";
 import multer from "multer";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
-const connectDB = async (uri) => {
+const connectDB = async (uri = 'mongodb+srv://nvhoan11092003:Hoan1109@cluster0.yvldvoj.mongodb.net/') => {
   try {
     const conn = await mongoose.connect(uri);
     console.log(`MongoDB Connected: ${conn.connection.host}`);
