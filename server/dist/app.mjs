@@ -1,7 +1,6 @@
 import dotenv, { config } from "dotenv";
 import express from "express";
 import morgan from "morgan";
-import cors from "cors";
 import mongoose, { Schema } from "mongoose";
 import jwt from "jsonwebtoken";
 import joi from "joi";
@@ -4294,6 +4293,7 @@ router.get("/vnpay_return", function(req, res, next) {
     res.render("success", { code: "97" });
   }
 });
+const cors = require("cors");
 const app = express();
 dotenv.config();
 connectDB(process.env.MONGO_URI);
@@ -4319,5 +4319,6 @@ app.use("/productDiscount", router$1);
 app.use("/payment", router);
 const viteNodeApp = app;
 export {
+  app as default,
   viteNodeApp
 };
