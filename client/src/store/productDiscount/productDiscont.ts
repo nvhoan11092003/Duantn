@@ -1,27 +1,26 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 // import { IProductVariant } from '../productVariant/productVariant.interface'
 
-export const productDiscountApi = createApi( {
+export const productDiscountApi = createApi({
     reducerPath: 'productDiscountApi',
-    baseQuery: fetchBaseQuery( {
-        baseUrl: 'http://localhost:8080/productDiscount'
-    } ),
-    tagTypes: [ 'productDiscount' ],
-    endpoints: ( builder ) => ( {
-        getproductDiscountApi: builder.query( {
+    baseQuery: fetchBaseQuery({
+        baseUrl: 'https://databasedatn-8bp3hnthd-nvhoan11092003.vercel.app/productDiscount'
+    }),
+    tagTypes: ['productDiscount'],
+    endpoints: (builder) => ({
+        getproductDiscountApi: builder.query({
             query: () => ``,
-            providesTags: [ 'productDiscount' ]
-        } ),
-        getproductDiscountApiSold: builder.query( {
-            query: () => ( {
+            providesTags: ['productDiscount']
+        }),
+        getproductDiscountApiSold: builder.query({
+            query: () => ({
                 url: `sold`,
                 method: 'GET',
-            } ),
-            providesTags: [ 'productDiscount' ]
-        } ),
-        getproductSold: builder.query( {
-            query: ( { lowerBound, upperBound } ) => 
-            {
+            }),
+            providesTags: ['productDiscount']
+        }),
+        getproductSold: builder.query({
+            query: ({ lowerBound, upperBound }) => {
                 const body = { lowerBound, upperBound }
                 return {
                     url: `products-by-sales-range`,
@@ -29,12 +28,12 @@ export const productDiscountApi = createApi( {
                     body: body
                 }
             },
-            providesTags: [ 'productDiscount' ]
-        } ),
+            providesTags: ['productDiscount']
+        }),
 
-    } )
+    })
 
-} )
+})
 
 export const { useGetproductDiscountApiQuery, useGetproductSoldQuery, useGetproductDiscountApiSoldQuery } = productDiscountApi
 

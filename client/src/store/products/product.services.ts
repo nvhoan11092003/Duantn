@@ -67,7 +67,7 @@ export const productApi = createApi({
 
         sortByProduct: builder.query({
             query: () => ({
-                url: 'http://localhost:8080/products',
+                url: 'https://databasedatn-8bp3hnthd-nvhoan11092003.vercel.app/products',
                 method: 'GET',
                 provideTags: ['product'],
                 params: {

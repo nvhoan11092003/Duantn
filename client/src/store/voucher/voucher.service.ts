@@ -5,7 +5,7 @@ import { IVoucher } from './voucher.interface'
 export const voucherApi = createApi({
     reducerPath: 'voucherApi',
     baseQuery: fetchBaseQuery({
-        baseUrl: 'http://localhost:8080/voucher'
+        baseUrl: 'https://databasedatn-8bp3hnthd-nvhoan11092003.vercel.app/voucher'
     }),
     tagTypes: ['Voucher'],
     endpoints: (builder) => ({
