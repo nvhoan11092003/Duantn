@@ -4,7 +4,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 export const productDiscountApi = createApi({
     reducerPath: 'productDiscountApi',
     baseQuery: fetchBaseQuery({
-        baseUrl: 'https://databasedatn-8bp3hnthd-nvhoan11092003.vercel.app/productDiscount'
+        baseUrl: 'https://databasedatn.vercel.app//productDiscount'
     }),
     tagTypes: ['productDiscount'],
     endpoints: (builder) => ({
