@@ -65,7 +65,7 @@ export const register = async ( req, res ) =>
         randomCode: randomCode,
         randomString: randomString,
       },
-     "  final_secret_key"
+     " final_secret_key"
     );
 
     const verifyUrl = `${ process.env.APP_URL }/auth/verify-email/${ randomString }/${ token }`;
