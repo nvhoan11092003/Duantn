@@ -65,7 +65,7 @@ export const register = async ( req, res ) =>
         randomCode: randomCode,
         randomString: randomString,
       },
-     " final_secret_key"
+      process.env.SECRET_KEY
     );
 
     const verifyUrl = `${ process.env.APP_URL }/auth/verify-email/${ randomString }/${ token }`;
@@ -101,7 +101,7 @@ export const verify = async ( req, res ) =>
     }
 
     const token = req.headers.authorization.split( " " )[ 1 ];
-    const decoded = jwt.verify( token,"  final_secret_key" );
+    const decoded = jwt.verify( token, process.env.SECRET_KEY );
 
     const email = decoded.email;
 
@@ -341,7 +341,7 @@ export const logIn = async ( req, res ) =>
       } );
     }
 
-    const token = jwt.sign( { id: user._id },"  final_secret_key", {
+    const token = jwt.sign( { id: user._id },process.env.SECRET_KEY, {
       expiresIn: "1d",
     } );
 
@@ -389,7 +389,7 @@ export const logInAdmin = async ( req, res ) =>
       } );
     }
 
-    const checktoken = jwt.sign( { id: user._id },"  final_secret_key", {
+    const checktoken = jwt.sign( { id: user._id },process.env.SECRET_KEY, {
       expiresIn: '3d',
     } );
 
@@ -418,7 +418,7 @@ export const getUserByToken = async ( req, res ) =>
     }
 
     const token = req.headers.authorization.split( " " )[ 1 ];
-    const decoded = jwt.verify( token,"  final_secret_key" );
+    const decoded = jwt.verify( token,process.env.SECRET_KEY );
     const user = await Auth.findById( decoded.id );
     if ( !user )
     {
