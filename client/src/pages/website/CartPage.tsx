@@ -3,8 +3,8 @@ import { useDecreaseQuantityMutation, useDeleteoneProductMutation, useGetCartQue
 
 import { useAppDispatch } from '../../store/hook';
 import { addOrder } from '../../store/Order/Order.slice';
-import { Link, useLocation } from 'react-router-dom';
-import { useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { toastError } from '../../hook/toastify';
 import { RiUserLine } from 'react-icons/ri';
 
@@ -12,10 +12,11 @@ import { RiUserLine } from 'react-icons/ri';
 
 const CartPage = () =>
 {
-    const dispatch = useAppDispatch();
     const location = useLocation();
     const { data: cart, refetch } = useGetCartQuery( [] );
     console.log( cart );
+    const [ hasOutOfStockProduct, setHasOutOfStockProduct ] = useState( false );
+    console.log( hasOutOfStockProduct );
     const check = localStorage.getItem( 'token' ); // Lấy token từ Local Storage
     const [ increaseQuantity ] = useIncreaseQuantityMutation(); // Sử dụng mutation increaseQuantity
     const [ decreaseQuantity ] = useDecreaseQuantityMutation(); // Sử dụng mutation decreaseQuantity
@@ -25,6 +26,29 @@ const CartPage = () =>
     {
         removeOnecart( id )
     }
+
+    useEffect( () =>
+    {
+        if ( cart && cart.items )
+        {
+            const hasOutOfStock = cart.items.some( ( item: any ) =>
+            {
+                const { productVariant } = item;
+                const { size, color } = productVariant || {};
+                const productVariantInfo = item.product?.ProductVariants?.find(
+                    ( variant: any ) => variant.size === size && variant.color === color
+                );
+                return productVariantInfo && item.quantity > productVariantInfo.quantity;
+            } );
+
+            setHasOutOfStockProduct( hasOutOfStock );
+        }
+    }, [ cart ] );
+
+
+
+
+
     useEffect( () =>
     {
         const fetchData = async () =>
@@ -59,6 +83,8 @@ const CartPage = () =>
             await increaseQuantity( { itemId, increaseBy } ).
                 unwrap().then( ( response ) =>
                 {
+                    console.log( response );
+
                 } )
                 .catch( ( error ) =>
                 {
@@ -140,6 +166,13 @@ const CartPage = () =>
                                         <p className="text-400">{ item.totalProduct }</p>
                                     </div>
 
+                                    { item?.product?.ProductVariants?.map( ( variant: any ) => (
+                                        item.productVariant.size === variant.size &&
+                                        item.productVariant.color === variant.color &&
+                                        item.quantity > ( variant?.quantity || 0 ) && (
+                                            <p className='text-red-500' key={ variant.id }>Sản phẩm đã hết</p>
+                                        )
+                                    ) ) }
                                 </div>
 
                             ) ) }
@@ -169,15 +202,21 @@ const CartPage = () =>
                             </div>
                             <p>Phí vận chuyển (nếu có) sẽ được tính toán trong trang thanh toán.</p>
                             <textarea placeholder="Ghi chú đơn hàng" className="w-[282px] sm:w-[220px] h-[115px] sm:h-[60px] border my-4 border-gray-300 rounded-md" name="" id="" />
-                            <Link to="/payment">
-                                <button
-                                    className="border rounded-full text-white w-[282px] sm:w-[220px] h-[62px] sm:h-[60px] bg-[#23314B]"
-                                    disabled={ !cart || !cart.items || cart.items.length === 0 }
-                                    onClick={ () => dispatch( addOrder( { ...cart, total: 0 } ) ) }
-                                >
-                                    <LockOutlined /> Thanh toán
-                                </button>
-                            </Link>
+                            { hasOutOfStockProduct ? (
+                                <div>
+                                    <p className=''>Có sản phẩm đã hết trong giỏ hàng. Vui lòng xóa để tiếp tục thanh toán.</p>
+                                    {/* Có thể hiển thị thông báo hoặc hướng dẫn người dùng xóa sản phẩm */ }
+                                </div>
+                            ) : (
+                                <Link to="/payment">
+                                    <button
+                                        className="border rounded-full text-white w-[282px] sm:w-[220px] h-[62px] sm:h-[60px] bg-[#23314B]"
+                                        disabled={ !cart || !cart.items || cart.items.length === 0 }
+                                    >
+                                        <LockOutlined /> Thanh toán
+                                    </button>
+                                </Link>
+                            ) }
                         </div>
                     ) : (
                         <div className="border border-gray-300 rounded-md px-4 py-6 sm:px-8 sm:py-9">
@@ -188,14 +227,21 @@ const CartPage = () =>
                             </div>
                             <p>Phí vận chuyển (nếu có) sẽ được tính toán trong trang thanh toán.</p>
                             <textarea placeholder="Ghi chú đơn hàng" className="w-[282px] sm:w-[220px] h-[115px] sm:h-[60px] border my-4 border-gray-300 rounded-md" name="" id="" />
-                            <Link to={ "" }>
-                                <button
-                                    className="border rounded-full text-white w-[282px] sm:w-[220px] h-[62px] sm:h-[60px] bg-[#23314B]"
-                                    disabled={ !cart || !cart.items || cart.items.length === 0 }
-                                >
-                                    <LockOutlined /> Thanh toán
-                                </button>
-                            </Link>
+                            { hasOutOfStockProduct ? (
+                                <div>
+                                    <p>Có sản phẩm đã hết trong giỏ hàng. Vui lòng xóa để tiếp tục thanh toán.</p>
+                                    {/* Có thể hiển thị thông báo hoặc hướng dẫn người dùng xóa sản phẩm */ }
+                                </div>
+                            ) : (
+                                <Link to="/payment">
+                                    <button
+                                        className="border rounded-full text-white w-[282px] sm:w-[220px] h-[62px] sm:h-[60px] bg-[#23314B]"
+                                        disabled={ !cart || !cart.items || cart.items.length === 0 }
+                                    >
+                                        <LockOutlined /> Thanh toán
+                                    </button>
+                                </Link>
+                            ) }
                         </div>
                     ) }
 

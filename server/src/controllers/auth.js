@@ -87,7 +87,6 @@ export const register = async ( req, res ) =>
   }
 };
 
-// xác thực email 
 export const verify = async ( req, res ) =>
 {
   const { randomCode, randomString } = req.body;
@@ -305,9 +304,6 @@ export const updateUserAdmin = async ( req, res ) =>
     return res.status( 500 ).json( { message: "Đã xảy ra lỗi khi cập nhật thông tin người dùng" } );
   }
 };
-
-
-
 export const logIn = async ( req, res ) =>
 {
   try
@@ -359,6 +355,54 @@ export const logIn = async ( req, res ) =>
   {
     return res.status( 500 ).json( {
       message: "Lỗi server: " + error.message,
+    } );
+  }
+};
+export const logInAdmin = async ( req, res ) =>
+{
+  try
+  {
+    const { email, password } = req.body;
+
+    const user = await Auth.findOne( { email } );
+
+    if ( !user || user.role !== 'Admin' )
+    {
+      return res.status( 404 ).json( {
+        message: 'Tài khoản hoặc mật khẩu không đúng hoặc bạn không có quyền Admin',
+      } );
+    }
+
+    if ( user.isBlocked )
+    {
+      return res.status( 403 ).json( {
+        message: 'Tài khoản của bạn đã bị chặn. Liên hệ với quản trị viên để biết thêm chi tiết.',
+      } );
+    }
+
+    const passwordMatch = await bcrypt.compare( password, user.password );
+
+    if ( !passwordMatch )
+    {
+      return res.status( 404 ).json( {
+        message: 'Tài khoản hoặc mật khẩu không đúng',
+      } );
+    }
+
+    const checktoken = jwt.sign( { id: user._id }, process.env.SECRET_KEY, {
+      expiresIn: '3d',
+    } );
+
+    user.password = undefined;
+
+    return res.status( 200 ).json( {
+      message: 'Đăng nhập tài khoản Admin thành công',
+      checktoken: checktoken,
+    } );
+  } catch ( error )
+  {
+    return res.status( 500 ).json( {
+      message: 'Lỗi server: ' + error.message,
     } );
   }
 };
@@ -509,40 +553,79 @@ export const addToCart = async ( req, res ) =>
     {
       if ( existingCart )
       {
+
+
         const existingItemIndex = existingCart.items.findIndex(
           ( item ) =>
             item.product.toString() === productId &&
             item.productVariant.size === size &&
             item.productVariant.color === color
         );
-
         if ( existingItemIndex !== -1 )
         {
-          existingCart.items[ existingItemIndex ].quantity += quantity;
+          const existingItem = existingCart.items[ existingItemIndex ];
+          const totalProduct = existingItem.quantity + quantity;
+
+          // Kiểm tra số lượng sản phẩm trong kho và trong giỏ hàng
+          if ( totalProduct > 10 )
+          {
+            return res.status( 400 ).json( {
+              message: `Bạn đã thêm quá số lượng hàng cho phép.`,
+            } );
+          }
+
+          existingItem.quantity += quantity;
         } else
         {
           existingCart.items.push( cartItem );
         }
-
-        const productToUpdate = await Product.findById( productId );
-        const variantToUpdate = productToUpdate.ProductVariants.find(
+        const specificVariant = productInfo.ProductVariants.find(
           ( variant ) => variant.size === size && variant.color === color
         );
 
-        if ( variantToUpdate )
+        // Tìm tổng số lượng biến thể sản phẩm trong giỏ hàng
+        const totalQuantityInCart = existingCart
+          ? existingCart.items.reduce(
+            ( acc, item ) =>
+              item.product.toString() === productId &&
+                item.productVariant.size === size &&
+                item.productVariant.color === color
+                ? acc + item.quantity
+                : acc,
+            0
+          )
+          : 0;
+
+
+
+
+
+        if ( totalQuantityInCart > specificVariant.quantity )
         {
-          variantToUpdate.quantity -= quantity;
-
-          // Check if the quantity of size or color is less than 0 and return an error
-          if ( variantToUpdate.quantity < 0 )
-          {
-            return res.status( 400 ).json( {
-              message: `Sản phẩm đã hết size hoặc màu bạn đã chọn (${ size }, ${ color }).`,
-            } );
-          }
-
-          await productToUpdate.save();
+          return res.status( 400 ).json( {
+            message: `Bạn đã thêm hết biến thể sản phẩm này vào giỏ hàng.`,
+          } );
         }
+
+        const productToUpdate = await Product.findById( productId );
+        // const variantToUpdate = productToUpdate.ProductVariants.find(
+        //   ( variant ) => variant.size === size && variant.color === color
+        // );
+
+        // if ( variantToUpdate )
+        // {
+        //   variantToUpdate.quantity -= quantity;
+
+        //   // Check if the quantity of size or color is less than 0 and return an error
+        //   if ( variantToUpdate.quantity < 0 )
+        //   {
+        //     return res.status( 400 ).json( {
+        //       message: `Sản phẩm đã hết size hoặc màu bạn đã chọn (${ size }, ${ color }).`,
+        //     } );
+        //   }
+
+        //   await productToUpdate.save();
+        // }
 
         await existingCart.save();
 
@@ -562,24 +645,24 @@ export const addToCart = async ( req, res ) =>
         } );
 
         const productToUpdate = await Product.findById( productId );
-        const variantToUpdate = productToUpdate.ProductVariants.find(
-          ( variant ) => variant.size === size && variant.color === color
-        );
+        // const variantToUpdate = productToUpdate.ProductVariants.find(
+        //   ( variant ) => variant.size === size && variant.color === color
+        // );
 
-        if ( variantToUpdate )
-        {
-          variantToUpdate.quantity -= quantity;
+        // if ( variantToUpdate )
+        // {
+        //   variantToUpdate.quantity -= quantity;
 
-          // Check if the quantity of size or color is less than 0 and return an error
-          if ( variantToUpdate.quantity < 0 )
-          {
-            return res.status( 400 ).json( {
-              message: `Sản phẩm đã hết size hoặc màu bạn đã chọn (${ size }, ${ color }).`,
-            } );
-          }
+        //   // Check if the quantity of size or color is less than 0 and return an error
+        //   if ( variantToUpdate.quantity < 0 )
+        //   {
+        //     return res.status( 400 ).json( {
+        //       message: `Sản phẩm đã hết size hoặc màu bạn đã chọn (${ size }, ${ color }).`,
+        //     } );
+        //   }
 
-          await productToUpdate.save();
-        }
+        //   await productToUpdate.save();
+        // }
 
         await newCart.save();
 
@@ -690,6 +773,85 @@ export const emptyCart = async ( req, res ) =>
   }
 }
 export const updateOrderStatus = async ( req, res, next ) =>
+{
+  const { status } = req.body;
+  const { id } = req.params;
+  const { _id } = req.user;
+
+  try
+  {
+    const existingOrder = await order.findById( id );
+
+    // Kiểm tra nếu đơn hàng đã chuyển trạng thái nhất định
+    if (
+      existingOrder.status === "Đã hoàn thành" ||
+      existingOrder.status === "Đã hủy" ||
+      existingOrder.status === "đang chờ được xử lý" ||
+      existingOrder.status === "Đã hoàn tiền"
+    )
+    {
+      return res.status( 400 ).json( {
+        error: "Không thể thay đổi trạng thái của đơn hàng này",
+      } );
+    }
+
+    const isAllowedToChange = canChangeToNewStatus( existingOrder, status );
+
+    if ( !isAllowedToChange )
+    {
+      return res.status( 400 ).json( {
+        error: "Không thể quay lại trạng thái này",
+      } );
+    }
+
+    // Thêm trạng thái mới vào lịch sử trạng thái
+    existingOrder.statusHistory.push( {
+      status: status,
+      updatedBy: _id, // ID của người thực hiện hành động
+      updatedAt: new Date(),
+    } );
+
+    // Cập nhật trạng thái mới cho đơn hàng
+    existingOrder.status = status;
+    const updatedOrder = await existingOrder.save();
+
+    // Check if the order status is "Đã hủy" or "Đã hoàn tiền"
+    if ( status === "Đã hủy" || status === "Đã hoàn tiền" )
+    {
+      // Iterate through the order items and update product quantities and sold values
+      for ( const item of updatedOrder.products )
+      {
+        const { product, quantity } = item;
+
+        // Update overall product quantity and sold count
+        await Product.updateOne(
+          { _id: product._id },
+          { $inc: { quantity, sold: -quantity } }
+        );
+
+        // Update each ProductVariant quantity
+        const { productVariant } = item;
+        const { size, color } = productVariant;
+
+        // Cập nhật số lượng cho một size và color cụ thể
+        await Product.findOneAndUpdate(
+          {
+            _id: product._id,
+            "ProductVariants.size": size,
+            "ProductVariants.color": color,
+          },
+          { $inc: { "ProductVariants.$.quantity": quantity } }
+        );
+      }
+    }
+
+    res.json( updatedOrder );
+  } catch ( error )
+  {
+    return next( error );
+  }
+};
+export const updateOrderStatusUser = async ( req, res, next ) =>
 {
   const { status } = req.body;
   const { id } = req.params;
@@ -936,7 +1098,22 @@ export const createOrder = async ( req, res ) =>
         },
       };
     } );
-
+    for ( const item of userCart.items )
+    {
+      const product = await Product.findById( item.product._id ); // Tìm sản phẩm theo ID
+      console.log( product );
+      // Tìm biến thể sản phẩm dựa trên size và color trong item.productVariant
+      const specificVariant = product.ProductVariants.find(
+        ( variant ) => variant.size === item.productVariant.size && variant.color === item.productVariant.color
+      );
+      console.log( specificVariant );
+      // Giảm số lượng của biến thể sản phẩm
+      if ( specificVariant )
+      {
+        specificVariant.quantity -= item.quantity;
+        await product.save(); // Lưu sản phẩm sau khi giảm số lượng
+      }
+    }
     const updated = await Product.bulkWrite( update, {} );
     return res.json( { message: "success", newOrder } );
   } catch ( error )
@@ -1046,6 +1223,7 @@ export const createPaymentUrl = async ( req, res ) =>
       updatedBy: _id,
       updatedAt: Date.now(), // Ngày giờ cập nhật
     };
+
     if ( couponApplied )
     {
       const usedVoucher = await Voucher.findOneAndUpdate(
@@ -1079,7 +1257,22 @@ export const createPaymentUrl = async ( req, res ) =>
         },
       };
     } );
+    for ( const item of userCart.items )
+    {
+      const product = await Product.findById( item.product._id ); // Tìm sản phẩm theo ID
+      console.log( product );
+      // Tìm biến thể sản phẩm dựa trên size và color trong itemToIncrease.productVariant
+      const specificVariant = product.ProductVariants.find(
+        ( variant ) => variant.size === item.productVariant.size && variant.color === item.productVariant.color
+      );
 
+      // Giảm số lượng của biến thể sản phẩm
+      if ( specificVariant )
+      {
+        specificVariant.quantity -= item.quantity;
+        await product.save(); // Lưu sản phẩm sau khi giảm số lượng
+      }
+    }
     const updated = await Product.bulkWrite( update, {} );
 
     return res.status( 200 ).json( {
@@ -1094,10 +1287,6 @@ export const createPaymentUrl = async ( req, res ) =>
 
   }
 }
-
-
-
-
 export const vnpayReturn = async ( req, res ) =>
 {
 
@@ -1187,6 +1376,26 @@ export const getAllOrders = async ( req, res ) =>
 }
 
 export const getoneOrders = async ( req, res ) =>
+{
+  const id = req.params.id
+  try
+  {
+    const Order = await order.findById( id )
+      .populate( {
+        path: 'products.productInfo.category', // Đường dẫn đến category trong productInfo
+        model: 'Category' // Tên của model Category
+      } )
+      .populate( 'products.product' ).populate( "statusHistory.updatedBy" ).populate( "userId" ) // Populate product (nếu có)
+      .exec();
+    res.json(
+      Order
+    )
+  } catch ( error )
+  {
+    throw new Error( error )
+  }
+}
+export const getoneOrdersAdmin = async ( req, res ) =>
 {
   const id = req.params.id
   try
@@ -1456,7 +1665,6 @@ export const getCancelledtrueOrders = async ( req, res ) =>
     return res.status( 500 ).json( { error: "Lỗi server: " + error.message } );
   }
 };
-
 export const findOrderByid = async ( req, res ) =>
 {
   const { orderId } = req.body;
@@ -1505,7 +1713,6 @@ export const findOrderByPhone = async ( req, res ) =>
     return res.status( 500 ).json( { error: "Lỗi server: " + error.message } );
   }
 };
-
 export const increaseQuantity = async ( req, res ) =>
 {
   const { _id } = req.user;
@@ -1525,31 +1732,21 @@ export const increaseQuantity = async ( req, res ) =>
     {
       return res.status( 404 ).json( { message: 'Sản phẩm không tồn tại trong giỏ hàng' } );
     }
-
-    // Lấy thông tin sản phẩm từ ProductVariants
     const { size, color } = itemToIncrease.productVariant; // Lấy thông tin size và color của sản phẩm trong giỏ hàng
-
     // Tìm biến thể sản phẩm từ mô hình ProductVariants
-    const productVariant = await Product.findOne( { "ProductVariants.size": size, "ProductVariants.color": color } );
-    if ( !productVariant )
-    {
-      return res.status( 404 ).json( { message: 'Không tìm thấy thông tin biến thể sản phẩm' } );
-    }
-
-    // Tìm thông tin biến thể sản phẩm cụ thể dựa trên size và color
-    const specificVariant = productVariant.ProductVariants.find(
-      ( variant ) => variant.size === size && variant.color === color
+    // Tìm sản phẩm dựa trên itemToIncrease.product
+    const product = await Product.findById( itemToIncrease.product );
+    console.log( product );
+    // Tìm biến thể sản phẩm từ mô hình ProductVariants của sản phẩm này
+    const specificVariant = product.ProductVariants.find(
+      variant => variant.size === itemToIncrease.productVariant.size && variant.color === itemToIncrease.productVariant.color
     );
-    if ( !specificVariant )
-    {
-      return res.status( 404 ).json( { message: 'Không tìm thấy biến thể sản phẩm' } );
-    }
-
     // Kiểm tra số lượng còn lại của biến thể sản phẩm
     if ( specificVariant.quantity < itemToIncrease.quantity + increaseBy )
     {
       return res.status( 400 ).json( { message: 'Quá số lượng màu và size' } );
     }
+
 
     // Lưu trữ số lượng trước khi thay đổi
     const previousQuantity = itemToIncrease.quantity;
@@ -1575,7 +1772,6 @@ export const increaseQuantity = async ( req, res ) =>
     return res.status( 500 ).json( { message: 'Lỗi máy chủ: ' + error.message } );
   }
 };
-
 
 export const decreaseQuantity = async ( req, res ) =>
 {
@@ -1734,7 +1930,25 @@ export const cancleOrder = async ( req, res ) =>
       updatedAt: Date.now(),
       updatedBy: _id, // ID của người thực hiện hành động hủy đơn hàng
     } );
+    for ( const item of orders.products )
+    {
+      const product = await Product.findById( item.product._id );
 
+      // Tìm biến thể sản phẩm dựa trên size và color trong item.productVariant
+      const specificVariant = product.ProductVariants.find(
+        ( variant ) => variant.size === item.productVariant.size && variant.color === item.productVariant.color
+      );
+
+      if ( specificVariant )
+      {
+        specificVariant.quantity += item.quantity; // Cập nhật lại số lượng biến thể sản phẩm
+        await product.save(); // Lưu sản phẩm sau khi cập nhật
+      }
+
+      // Giảm số lượng sold của sản phẩm
+      product.sold -= item.quantity;
+      await product.save(); // Lưu sản phẩm sau khi giảm số lượng sold
+    }
     // Lưu đơn hàng sau khi cập nhật
     await orders.save();
 

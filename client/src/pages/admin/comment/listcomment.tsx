@@ -69,7 +69,7 @@ const Listcomment = () => {
 
     const columns: ColumnsType<IComment> = [
         {
-            title: "name",
+            title: "Tên hiển thị",
             dataIndex: "name",
             key: "name",
             render: (name) =>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button, Input, Modal, Select, Table } from 'antd';
 import Container from '../../components/layouts/website/Container';
-import { useCancelOrderMutation, useGetOrderQuery, useUpdateOrderStatusMutation } from '../../store/Auth/Auth.services';
+import { useCancelOrderMutation, useGetOrderQuery, useUpdateOrdersStatususerMutation } from '../../store/Auth/Auth.services';
 import { Link } from 'react-router-dom';
 import { toastError, toastSuccess } from '../../hook/toastify';
 
@@ -15,7 +15,7 @@ const PurchaseHistory = () =>
     const [ cancelReason, setCancelReason ] = useState( '' );
     const [ updateStatus ] = useCancelOrderMutation();
     const [ isOrderCancelled, setIsOrderCancelled ] = useState( false );
-    const [ updatestatus ] = useUpdateOrderStatusMutation()
+    const [ updatestatus ] = useUpdateOrdersStatususerMutation()
     const [ isReceived, setIsReceived ] = useState( false );
     const [ showThankYouModal, setShowThankYouModal ] = useState( false );
 

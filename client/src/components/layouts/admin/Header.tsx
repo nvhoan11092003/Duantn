@@ -7,13 +7,13 @@ type Props = {
 
 
 
-import { IoMail, IoCaretDownOutline, IoCaretUpOutline} from 'react-icons/io5'
+import { IoMail, IoCaretDownOutline, IoCaretUpOutline } from 'react-icons/io5'
 import { FaCalendarAlt, FaBell } from 'react-icons/fa'
 
 
 
 const Header = () => {
-  
+
   return (
     <div className=''>
       <div className='flex justify-end max-w-full mt-8 mb-7 mx-6 h-10'>
@@ -27,13 +27,13 @@ const Header = () => {
             </div>
             <div className='mr-3'>
               <h3 className='text-sm font-medium text-[#07080B]'>Quản Trị Viên</h3>
-              <p className='text-xs font-medium text-black-400 leading-[18px]'>Manager</p>
+              {/* <p className='text-xs font-medium text-black-400 leading-[18px]'>Manager</p> */}
             </div>
-            <div className='flex items-center'><IoCaretDownOutline className='block text-lg  text-black-400  font-normal ml-2 hover:text-black-500'/></div>
+            <div className='flex items-center'><IoCaretDownOutline className='block text-lg  text-black-400  font-normal ml-2 hover:text-black-500' /></div>
           </div>
         </div>
-      </div>  
-      
+      </div>
+
     </div>
   )
 }

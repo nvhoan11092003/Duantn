@@ -1,16 +1,17 @@
 import { Button, Modal, Table } from "antd";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 
 import { InfoCircleTwoTone } from "@ant-design/icons";
-import { useCancleOrdersMutation, useConfirmCancelOrderMutation, useGetOneOrderQuery } from "../../../store/Auth/Auth.services";
+import { useCancleOrdersMutation, useConfirmCancelOrderMutation, useGetOneOrderAdminQuery } from "../../../store/Auth/Auth.services";
 import { useEffect, useState } from "react";
 import { toastError, toastSuccess } from "../../../hook/toastify";
 import TextArea from "antd/es/input/TextArea";
 
 const OrderList = () =>
 {
+    const location = useLocation();
     const { id } = useParams<{ id: any }>()
-    const { data: orderData } = useGetOneOrderQuery( id )
+    const { data: orderData, refetch } = useGetOneOrderAdminQuery( id )
     const [ cancelReasonModalVisible, setCancelReasonModalVisible ] = useState( false );
     const [ cancelReasonFromOrder, setCancelReasonFromOrder ] = useState( '' );
     const [ confirmCancelOrder ] = useConfirmCancelOrderMutation();
@@ -19,6 +20,23 @@ const OrderList = () =>
     const MIN_CANCEL_REASON_LENGTH = 10; // Minimum length for cancel reason
 
     const [ cancels ] = useCancleOrdersMutation()
+    useEffect( () =>
+    {
+        const fetchData = async () =>
+        {
+            try
+            {
+                // Gọi hàm refetch để tải lại dữ liệu giỏ hàng
+                await refetch();
+                // Dữ liệu giỏ hàng đã được cập nhật
+            } catch ( error: any )
+            {
+                toastError( error.data.error )   // Xử lý lỗi nếu có
+            }
+        };
+
+        fetchData(); // Gọi hàm fetchData khi location.pathname thay đổi
+    }, [ location.pathname, refetch ] );
     const handleCancelOrder = async () =>   
     {
         if ( cancelReason.trim().length === 0 )
@@ -135,7 +153,7 @@ const OrderList = () =>
         updatedAt: new Date( historyItem?.updatedAt ).toLocaleString(), // Đổi định dạng ngày giờ
     } ) );
 
-    
+
 
     const columns = [
         {

@@ -18,7 +18,7 @@ const { Content, Sider } = Layout;
 const items = [
   {
     key: '1',
-    label: 'Dashboard',
+    label: 'Thống kê',
     icon: <RiLayoutGridFill className='text-gray-85 text-lg  hover:text-[#1D1F2C]  ' />,
     path: '',
   },
@@ -76,12 +76,12 @@ const items = [
     icon: <FaCommentAlt className='text-gray-85 text-lg  hover:text-[#1D1F2C]  ' />,
     path: 'comments', // Đường dẫn tới bình luận
   },
-  {
-    label: 'Phản hồi',
-    key: '12',
-    icon: <BiSolidLike className='text-gray-85 text-lg  hover:text-[#1D1F2C]  ' />,
-    path: 'feedback', // Đường dẫn tới phản hồi 
-  },
+  // {
+  //   label: 'Phản hồi',
+  //   key: '12',
+  //   icon: <BiSolidLike className='text-gray-85 text-lg  hover:text-[#1D1F2C]  ' />,
+  //   path: 'feedback', // Đường dẫn tới phản hồi 
+  // },
   // {
   //   label: 'Thống kê',
   //   key: '13',

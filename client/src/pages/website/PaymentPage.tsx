@@ -794,7 +794,7 @@ const CheckoutPage = () =>
                                                 <button
                                                     onClick={ () => handleVoucherClick( voucher ) } // Handle the usage of the voucher
                                                     key={ voucher?._id }
-                                                    className={ `bg-gray-200 space-x-6 rounded-full pl-[50px] text-[15px] font-medium flex w-[550px] ${ !isVoucherValid( voucher ) && 'opacity-50' }` }
+                                                    className={ `bg-gray-200 space-x-6 rounded-full pl-[15px] text-[15px] font-medium flex w-[550px] ${ !isVoucherValid( voucher ) && 'opacity-50' }` }
                                                 >
                                                     <p>{ voucher.name }</p>
                                                     <div> Mã code: { voucher.code } ({ voucher.discount }%)</div>

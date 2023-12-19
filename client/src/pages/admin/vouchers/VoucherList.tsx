@@ -136,12 +136,12 @@ const VouCherList = () => {
             key: 'status',
         },
         {
-            title: 'Chi tiết voucher ',
+            title: 'Mô tả chi tiết ',
             dataIndex: 'detailVoucher',
             key: 'detailVoucher',
         },
         {
-            title: 'Action',
+            title: 'Hành Động',
             key: 'action',
             render: (_, record) => (
                 <Space size="middle">

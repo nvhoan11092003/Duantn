@@ -12,57 +12,49 @@ import { useGetVoucherListQuery } from "../../store/voucher/voucher.service";
 import Marquee from "react-fast-marquee";
 import { useEffect, useState } from "react";
 
-const HomePage = () =>
-{
+const HomePage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { data: vouchers } = useGetVoucherListQuery( null )
-  const [ voucherss ] = useSaveVoucherMutation()
-  const [ isVoucherSaved, setIsVoucherSaved ] = useState( false );
-  console.log( vouchers );
-  const { data: productList, isLoading, isError, refetch } = useGetProductsQuery( {
+  const { data: vouchers } = useGetVoucherListQuery(null)
+  const [voucherss] = useSaveVoucherMutation()
+  const [isVoucherSaved, setIsVoucherSaved] = useState(false);
+  
+  console.log(vouchers);
+  const { data: productList, isLoading, isError, refetch } = useGetProductsQuery({
     gte: 0, // Assuming value[0] contains the minimum price
     lte: 10000000, // Assuming value[1] contains the maximum price
-  } );
-  useEffect( () =>
-  {
-    const fetchData = async () =>
-    {
-      try
-      {
+  });
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
         await refetch();
-      } catch ( error: any )
-      {
-        toastError( error.data.error )   // Xử lý lỗi nếu có
+      } catch (error: any) {
+        toastError(error.data.error)   // Xử lý lỗi nếu có
       }
     };
 
     fetchData(); // Kích hoạt fetch data khi location.pathname thay đổi
-  }, [ location.pathname, refetch ] );
+  }, [location.pathname, refetch]);
 
-  const { data: productsold } = useGetproductDiscountApiSoldQuery( null )
-  const { data: productDiscont } = useGetproductDiscountApiQuery( null )
-  const { data: categories } = useGetCategoryListQuery( null )
+  const { data: productsold } = useGetproductDiscountApiSoldQuery(null)
+  const { data: productDiscont } = useGetproductDiscountApiQuery(null)
+  const { data: categories } = useGetCategoryListQuery(null)
 
-  const saveVoucher = ( voucherId: any ) =>
-  {
-    console.log( voucherId );
+  const saveVoucher = (voucherId: any) => {
+    console.log(voucherId);
 
-    voucherss( voucherId ).unwrap().then( ( response: any ) =>
-    {
-      console.log( response );
-      setIsVoucherSaved( true );
-      toastSuccess( "Đã lưu voucher" )
-    } ).catch( ( error ) =>
-    {
-      toastError( error.data.message )
-    } )
+    voucherss(voucherId).unwrap().then((response: any) => {
+      console.log(response);
+      setIsVoucherSaved(true);
+      toastSuccess("Đã lưu voucher")
+    }).catch((error) => {
+      toastError(error.data.message)
+    })
 
   };
-  const handleGetProductDetail = ( idProduct: string ) =>
-  {
-    window.scrollTo( 0, 0 );
-    navigate( `/home/product-detail/${ idProduct }` )
+  const handleGetProductDetail = (idProduct: string) => {
+    window.scrollTo(0, 0);
+    navigate(`/home/product-detail/${idProduct}`)
   }
 
 
@@ -70,49 +62,43 @@ const HomePage = () =>
 
   return (
     <div className="mx-auto items-center">
-      {/* banner */ }
+      {/* banner */}
       <div className="flex items-center justify-center sm:justify-start">
         <img src="/bannerfirst.jpg" alt="" className="w-full sm:w-auto" />
       </div>
 
-      {/* Danh mục sản phẩm */ }
+      {/* Danh mục sản phẩm */}
       <div className="flex flex-col  space-x-[20px] mt-[20px] ml-[100px]">
       </div>
       <Marquee className='  text-center text-sm font-medium py-3'>
         <div className="flex space-x-4">
-
           {
-            vouchers?.data?.map( ( voucher: any ) => (
-              <div key={ voucher?._id } className="bg-gray-200 space-x-5  rounded-full p-2 text-sm font-medium flex items-center">
-                <p>{ voucher.name }</p>
-                <div> Mã code: { voucher.code }  (Giảm { voucher.discount }%)</div>
+            vouchers?.data?.map((voucher: any) => (
+              <div key={voucher?._id} className="bg-gray-200 space-x-5  rounded-full p-2 text-sm font-medium flex items-center">
+                <p>{voucher.name}</p>
+                <div> Mã code: {voucher.code}  (Giảm {voucher.discount}%)</div>
                 <button
-                  onClick={ () => saveVoucher( voucher?._id ) }
-                  disabled={ isVoucherSaved } // Check if the voucher ID exists in the user's list
-                  className={ `ml-2 ${ isVoucherSaved ? 'bg-gray-400' : 'bg-blue-500' } text-white px-2 py-1 rounded-md text-xs font-medium` }
-
+                  onClick={() => saveVoucher(voucher?._id)}
+                  disabled={isVoucherSaved} // Check if the voucher ID exists in the user's list
+                  className={`ml-2 ${isVoucherSaved ? 'bg-gray-400' : 'bg-blue-500'} text-white px-2 py-1 rounded-md text-xs font-medium`}
                 >
-                  { isVoucherSaved ? 'Voucher Đã Lưu' : 'Nhận' }
+                  {isVoucherSaved ? 'Voucher Đã Lưu' : 'Nhận'}
                 </button>
               </div>
-
-
-            ) ) }
-
+            ))}
         </div>
-      </Marquee >
+      </Marquee>
       <h1 className="text-4xl sm:text-6xl font-[Noto sans] text-[#23314B] font-medium md:pt-10 lg:pt-16 text-center">Danh Mục Sản Phẩm</h1>
       <div className="flex space-x-[20px] mt-[20px] ml-[100px]">
         {
-          categories?.data.map( ( category: any ) =>
-          {
+          categories?.data.map((category: any) => {
             return (
               <div className="relative w-full sm:w-80 flex-col rounded-xl bg-clip-border text-gray-700 overflow-hidden">
                 <div className="relative h-96 sm:h-100 overflow-hidden rounded-xl bg-clip-border text-gray-700 group">
                   <div className="object-cover w-full transform scale-100 group-hover:scale-105 transition-transform bg-gray-600">
-                    <img className="object-cover w-full opacity-70" src={ category?.image.url } alt="profile-picture" />
-                    <Link to={ `/products/${ category._id }` }>
-                      <p className="absolute text-white top-[170px] left-[30%] text-[25px] font-semibold text-center">{ category?.title }</p>
+                    <img className="object-cover w-full opacity-70" src={category?.image.url} alt="profile-picture" />
+                    <Link to={`/products/${category._id}`}>
+                      <p className="absolute text-white top-[170px] left-[30%] text-[25px] font-semibold text-center">{category?.title}</p>
                       <p className="text-white pt-[100px] font-[Noto Sans] text-[20px] font-bold absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                         <i className="fas fa-chevron-circle-right fa-2x"></i>
                       </p>
@@ -121,7 +107,7 @@ const HomePage = () =>
                 </div>
               </div>
             );
-          } ) }
+          })}
       </div>
 
 
@@ -149,11 +135,10 @@ const HomePage = () =>
       </div>
 
 
-      {/* sản phẩm mới */ }
+      {/* sản phẩm mới */}
 
       <div className="grid grid-cols-3 space-x-5 ml-[100px]">
-        { productList?.products?.map( ( product: any ) =>
-        {
+        {productList?.products?.map((product: any) => {
           return (
 
             <div className="relative w-full sm:w-96 rounded-xl bg-white bg-clip-border text-gray-700 group">
@@ -162,7 +147,7 @@ const HomePage = () =>
                   {product.original_price && (
 
                     <p className="absolute z-10 top-3 left-3 bg-[#f83a3a] text-[8px] sm:text-xs font-semibold rounded-full text-white px-2 py-[3px]">
-                      Tiết kiệm { ( product.price - product.original_price ).toLocaleString() } đ
+                      Tiết kiệm {(product.price - product.original_price).toLocaleString()} đ
                     </p>
 
                   )}
@@ -183,14 +168,14 @@ const HomePage = () =>
                       )}
                     </p>
                   </div>
-                  <button onClick={ () => handleGetProductDetail( product._id ) } className="absolute top-[70%] right-0 bg-[#23314b] text-white text-center py-2 hover:bg-transparent hover:text-[#23314b] hover:border-2 hover:border-[#23314b] transition-all duration-300 ease-in-out opacity-0 group-hover:opacity-100 rounded-full w-[150px]">
+                  <button onClick={() => handleGetProductDetail(product._id)} className="absolute top-[70%] right-0 bg-[#23314b] text-white text-center py-2 hover:bg-transparent hover:text-[#23314b] hover:border-2 hover:border-[#23314b] transition-all duration-300 ease-in-out opacity-0 group-hover:opacity-100 rounded-full w-[150px]">
                     + Thêm nhanh
                   </button>
                 </div>
               </button>
             </div>
           );
-        } ) }
+        })}
       </div>
 
 
@@ -223,37 +208,36 @@ const HomePage = () =>
       </div>
 
 
-      {/* sản phẩm bán chạy */ }
+      {/* sản phẩm bán chạy */}
 
       <div className="grid grid-cols-3">
-        { productsold?.productsSoldOverTwenty?.map( ( product: any ) =>
-        {
+        {productsold?.productsSoldOverTwenty?.map((product: any) => {
           return (
-            <Link to={ `/home/product-detail/${ product._id }` } key={ product._id } className="flex flex-row sm:flex-row mx-auto justify-center mt-10 mb-10 space-y-6 sm:space-y-0 sm:space-x-6 max-w-screen-xl">
-              {/* Card 1 */ }
+            <Link to={`/home/product-detail/${product._id}`} key={product._id} className="flex flex-row sm:flex-row mx-auto justify-center mt-10 mb-10 space-y-6 sm:space-y-0 sm:space-x-6 max-w-screen-xl">
+              {/* Card 1 */}
               <div className="relative w-full sm:w-96 flex-col rounded-xl bg-white bg-clip-border text-gray-700 group">
                 <div className="relative h-100 rounded-xl bg-white bg-clip-border text-gray-700 overflow-hidden group-hover:scale-105 transition-transform duration-300 ease-in-out">
-                  { product.original_price && (
+                  {product.original_price && (
                     <p className="absolute z-10 top-3 left-3 bg-[#f83a3a] text-[8px] sm:text-xs font-semibold rounded-full text-white px-2 py-[3px]">
-                      Tiết kiệm { product.price - product.original_price } đ
+                      Tiết kiệm {product.price - product.original_price} đ
                     </p>
-                  ) }
+                  )}
 
 
-                  <img className="object-cover w-full" src={ product?.images[ 0 ]?.url } alt="profile-picture" />
-                  <p className="text-center text-[20px] font-semibold">{ product.name }</p>
+                  <img className="object-cover w-full" src={product?.images[0]?.url} alt="profile-picture" />
+                  <p className="text-center text-[20px] font-semibold">{product.name}</p>
 
                   <div className="flex space-x-4 pl-[130px] mb-4">
-                    { product.original_price ? (
+                    {product.original_price ? (
                       <>
-                        <span className="text-[#f83a3a] text-sm md:text-base font-extralight text-center">{ product.original_price.toLocaleString() }₫</span>
-                        <span className="line-through text-sm md:text-base font-extralight text-[#23314bb3]">{ product.price.toLocaleString() }₫</span>
+                        <span className="text-[#f83a3a] text-sm md:text-base font-extralight text-center">{product.original_price.toLocaleString()}₫</span>
+                        <span className="line-through text-sm md:text-base font-extralight text-[#23314bb3]">{product.price.toLocaleString()}₫</span>
                       </>
                     ) : (
-                      <span className="text-sm md:text-base font-extralight text-align-center text-[#23314bb3]">{ product.price.toLocaleString() }₫</span>
-                    ) }
+                      <span className="text-sm md:text-base font-extralight text-align-center text-[#23314bb3]">{product.price.toLocaleString()}₫</span>
+                    )}
                   </div>
-                  <button onClick={ () => handleGetProductDetail( product._id ) } className="absolute top-[70%] right-0 bg-[#23314b] text-white text-center py-2 hover:bg-transparent hover:text-[#23314b] hover:border-2 hover:border-[#23314b] transition-all duration-300 ease-in-out opacity-0 group-hover:opacity-100 rounded-full w-[150px]">
+                  <button onClick={() => handleGetProductDetail(product._id)} className="absolute top-[70%] right-0 bg-[#23314b] text-white text-center py-2 hover:bg-transparent hover:text-[#23314b] hover:border-2 hover:border-[#23314b] transition-all duration-300 ease-in-out opacity-0 group-hover:opacity-100 rounded-full w-[150px]">
                     + Thêm nhanh
                   </button>
                 </div>
@@ -266,7 +250,7 @@ const HomePage = () =>
 
             </Link>
           );
-        } ) }
+        })}
       </div>
 
 
@@ -289,47 +273,46 @@ const HomePage = () =>
         </div>
       </div>
 
-      {/* sản phẩm giảm giá*/ }
+      {/* sản phẩm giảm giá*/}
 
       <div className="grid grid-cols-3">
-        { productDiscont?.productsWithDiscount?.map( ( product: any ) =>
-        {
+        {productDiscont?.productsWithDiscount?.map((product: any) => {
           return (
-            <Link to={ `/home/product-detail/${ product._id }` } key={ product._id } className="flex flex-row sm:flex-row mx-auto justify-center mt-10 mb-10 space-y-6 sm:space-y-0 sm:space-x-6 max-w-screen-xl">
-              {/* Card 1 */ }
+            <Link to={`/home/product-detail/${product._id}`} key={product._id} className="flex flex-row sm:flex-row mx-auto justify-center mt-10 mb-10 space-y-6 sm:space-y-0 sm:space-x-6 max-w-screen-xl">
+              {/* Card 1 */}
               <div className="relative w-full sm:w-96 flex-col rounded-xl bg-white bg-clip-border text-gray-700 group">
                 <div className="relative h-100 rounded-xl bg-white bg-clip-border text-gray-700 overflow-hidden group-hover:scale-105 transition-transform duration-300 ease-in-out">
 
                   <p className="absolute z-10 top-3 left-3 bg-[#f83a3a] text-[8px] sm:text-xs font-semibold rounded-full text-white px-2 py-[3px]">
-                    Tiết kiệm { product.discountProduct.toLocaleString() }đ
+                    Tiết kiệm {product.discountProduct.toLocaleString()}đ
                   </p>
 
 
-                  <img className="object-cover w-full" src={ product?.images[ 0 ]?.url } alt="profile-picture" />
-                  <p className="text-center text-[20px] font-semibold">{ product.name }</p>
+                  <img className="object-cover w-full" src={product?.images[0]?.url} alt="profile-picture" />
+                  <p className="text-center text-[20px] font-semibold">{product.name}</p>
 
                   <div className="flex space-x-4 pl-[130px] mb-4">
                     <>
-                      <span className="text-[#f83a3a] text-sm md:text-base font-extralight text-center">{ product.original_price.toLocaleString() }₫</span>
-                      <span className="line-through text-sm md:text-base font-extralight text-[#23314bb3]">{ product.price.toLocaleString() }₫</span>
+                      <span className="text-[#f83a3a] text-sm md:text-base font-extralight text-center">{product.original_price.toLocaleString()}₫</span>
+                      <span className="line-through text-sm md:text-base font-extralight text-[#23314bb3]">{product.price.toLocaleString()}₫</span>
                     </>
 
 
                   </div>
-                  <button onClick={ () => handleGetProductDetail( product._id ) } className="absolute top-[70%] right-0 bg-[#23314b] text-white text-center py-2 hover:bg-transparent hover:text-[#23314b] hover:border-2 hover:border-[#23314b] transition-all duration-300 ease-in-out opacity-0 group-hover:opacity-100 rounded-full w-[150px]">
+                  <button onClick={() => handleGetProductDetail(product._id)} className="absolute top-[70%] right-0 bg-[#23314b] text-white text-center py-2 hover:bg-transparent hover:text-[#23314b] hover:border-2 hover:border-[#23314b] transition-all duration-300 ease-in-out opacity-0 group-hover:opacity-100 rounded-full w-[150px]">
                     + Thêm nhanh
                   </button>
                 </div>
               </div>
             </Link>
           );
-        } ) }
+        })}
       </div>
 
 
 
 
-      {/* banner dưới */ }
+      {/* banner dưới */}
       <div className="w-full relative text-center mb-[90px] ">
         <img src="/bannerdown.jpg" alt="" className="w-full  sm:w-[1700px] h-[450px] mt-[100px]" />
         <div className="absolute top-[120px] left-[50%] text-white transform -translate-x-1/2">
@@ -344,7 +327,7 @@ const HomePage = () =>
 
       </div>
 
-      {/* một số hình ảnh */ }
+      {/* một số hình ảnh */}
 
       <div className="flex ml-[120px]  space-x-10  mt-8 sm:mt-12">
 

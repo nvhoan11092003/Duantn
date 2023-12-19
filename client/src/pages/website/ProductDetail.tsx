@@ -5,7 +5,7 @@ import Popup from "reactjs-popup"
 import 'reactjs-popup/dist/index.css';
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useGetProductQuery } from "../../store/products/product.services";
-import { useAddToCartMutation, useAdddTowishListMutation, useGetWishListQuery } from "../../store/Auth/Auth.services";
+import { useAddToCartMutation, useAdddTowishListMutation, useGetCartQuery } from "../../store/Auth/Auth.services";
 import { useGetCommentbyidprouctQuery } from "../../store/Comment/comment.services";
 import { toastError, toastSuccess } from "../../hook/toastify";
 import { useGetCategoryProductQuery } from "../../store/categoies/category.services";
@@ -19,13 +19,15 @@ const ProductDetail = () =>
 
     const location = useLocation();
     const { id } = useParams();
-    const { data: product, error, isLoading } = useGetProductQuery( id! );
+    const { data: product, error, isLoading, refetch } = useGetProductQuery( id! );
+    const { data: carts } = useGetCartQuery( [] );
+    console.log( carts );
+
     const _id = product?.data.category._id
     const { data: categoryProduct } = useGetCategoryProductQuery( _id! )
-    const { data: wistListProduct, refetch } = useGetWishListQuery( [] )
-
     const [ wishList ] = useAdddTowishListMutation()
     const [ AddToCartMutation ] = useAddToCartMutation()
+    const [ tabVisited, setTabVisited ] = useState( false );
 
     const [ mauSac, setmauSac ] = useState();
     const [ quantity, setQuantity ] = useState( 0 );
@@ -56,17 +58,29 @@ const ProductDetail = () =>
 
         fetchData(); // Gọi hàm fetchData khi location.pathname thay đổi
     }, [ location.pathname, refetch ] );
-    const addtowishList = ( prodId: any ) =>
+    const addtowishList = async ( prodId: any ) =>
     {
-        wishList( prodId ).unwrap().then( () =>
+        try
         {
-            toastSuccess( "Đã thêm sản phẩm vào danh sách yêu thích" );
+            wishList( prodId ).unwrap().then( () =>
+            {
 
-            refetch();
-        } ).catch( ( error ) =>
+                toastSuccess( "Đã thêm sản phẩm vào danh sách yêu thích" )
+
+
+
+
+
+            } ).catch( ( error ) =>
+            {
+                toastError( error.data.message );
+            } );
+            await refetch();
+        } catch ( error )
         {
-            toastError( error.data.message );
-        } );
+            console.log( error );
+
+        };
 
     };
     const ProductVariants = product?.data?.ProductVariants
@@ -86,7 +100,7 @@ const ProductDetail = () =>
             return item.color === newColor
         } )
         const newsizes = sizes.sort(
-            ( a, b ) =>
+            ( a: any, b: any ) =>
             {
                 const asize = a.size.toUpperCase()
                 const bsize = b.size.toUpperCase()
@@ -146,7 +160,11 @@ const ProductDetail = () =>
 
 
 
-
+    useEffect( () =>
+    {
+        // Set tabVisited to true when the component mounts or when location.pathname changes
+        setTabVisited( true );
+    }, [ location.pathname ] );
 
     //  lấy danh sách màu
     if ( ProductVariants )
@@ -169,36 +187,46 @@ const ProductDetail = () =>
     useEffect( () =>
     {
         // auto select mau lúc đầu
-        if ( ProductVariants )
+        if ( tabVisited && ProductVariants )
         {
             handleChangeMauSac( ProductVariants[ 0 ]?.color )
         }
-    }, [ isLoading ] )
+    }, [ isLoading, tabVisited ] )
 
 
 
     function addtocard ()
     {
-        if ( mauSac && kichCo && count )
+        try
         {
-            const cart: any = {
-                productId: id,
-                size: kichCo,
-                color: mauSac,
-                quantity: count
+
+
+            if ( mauSac && kichCo && count )
+            {
+                const cart: any = {
+                    productId: id,
+                    size: kichCo,
+                    color: mauSac,
+                    quantity: count
+                }
+                navigate( '/cart' )
+                AddToCartMutation( cart ).unwrap().then( ( res ) =>
+                {
+                    console.log( res );
+
+                } ).catch( ( error ) =>
+                {
+                    toastError( error.data.message )
+                } )
+            } else
+            {
+                toastError( "Bạn chưa chọn số lượng sản phẩm " )
             }
-
-
-            navigate( '/cart' )
-            AddToCartMutation( cart )
-        } else
+        } catch ( error: any )
         {
-            toastError( "Bạn chưa chọn số lượng sản phẩm " )
-
-
+            toastError( error.message )
 
         }
-
 
     }
 
@@ -255,10 +283,11 @@ const ProductDetail = () =>
                         ) : (
                             <div className="flex gap-2 text-left mt-[40px]">
                                 <span className="text-[#f83a3a] text-sm md:text-[21px] font-thin">
-
                                     { product?.data?.price.toLocaleString() }₫
-
                                 </span>
+                                <button onClick={ () => addtowishList( product?.data?._id ) }>
+                                    <HeartFilled className="text-[20px] text-red-500" />
+                                </button>
                             </div>
                         ) }
                         <div className="mt-[30px] flex">
@@ -333,6 +362,43 @@ const ProductDetail = () =>
                 </div>
 
             </div>
+            <div className="mt-[100px]">
+                <hr className="w-[1200px] ml-[150px]" />
+                <div className="flex justify-between ">
+                    <div className="py-5">
+                        <div className="flex justify-between space-x-[900px] ml-[150px] ">
+                            <p className="text-[22px] font-semibold text-[#23314b] ">Mô tả sản phẩm</p>
+                            <span
+                                className={ `inline-block  w-[30px] h-[30px] pt-[5px] pl-[5px]   bg-[#23314b1a] rounded-full group hover:bg-[#23314b] transform transition-transform duration-300 ${ arrange ? "rotate-180" : ""
+                                    }` }
+                                onClick={ handleTongleArrange }
+                            >
+                                <MdOutlineKeyboardArrowDown className="text-[#23314b] text-[20px] group-hover:text-white" />
+                            </span>
+                        </div>
+                        { arrange && (
+                            <div className={ `mt-5` }>
+                                <div className="flex items-center ">
+                                    <ul className="pl-[220px] list-disc">
+                                        <li className="text-[17px] font-extralight text-[#23314b] leading-[27px]">Chất vải Cotton co giãn 4 chiều và thoáng mát cả ngày dài</li>
+                                        <li className="text-[17px] font-extralight text-[#23314b] leading-[27px]">Phom Regular Fit tôn dáng, hợp với hầu hết kích thước cơ thể</li>
+                                        <li className="text-[17px] font-extralight text-[#23314b] leading-[27px]">Thoải mái giặt máy, không ra màu và không mất phom áo</li>
+                                    </ul>
+                                </div>
+                                <div className="ml-[200px]">
+                                    <img src="https://cdn.shopify.com/s/files/1/0685/2237/7522/files/polomanor_tshirt_detail_raglan_xam_dam_02_2048x2048.jpg?v=1684213776" alt="" />
+                                    <img src="https://cdn.shopify.com/s/files/1/0685/2237/7522/files/polomanor_tshirt_detail_raglan_xam_dam_03_2048x2048.jpg?v=1684213786" alt="" />
+                                    <img src="https://cdn.shopify.com/s/files/1/0685/2237/7522/files/polomanor_tshirt_detail_raglan_xam_dam_04_2048x2048.jpg?v=1684213797" alt="" />
+                                    <img src="https://cdn.shopify.com/s/files/1/0685/2237/7522/files/polomanor_tshirt_detail_raglan_xam_dam_05_2048x2048.jpg?v=1684213809" alt="" />
+                                    <img src="https://cdn.shopify.com/s/files/1/0685/2237/7522/files/polomanor_tshirt_detail_raglan_xam_dam_06_2048x2048.jpg?v=1684213820" alt="" />
+                                    <img src="https://cdn.shopify.com/s/files/1/0685/2237/7522/files/polomanor_tshirt_detail_raglan_xam_dam_07_2048x2048.jpg?v=1684213900" alt="" />
+                                </div>
+                            </div>
+                        ) }
+                    </div>
+                </div>
+                <hr className="w-[1200px] ml-[150px]" />
+            </div>
             <div className=" flex flex-wrap mt-[50px]">
                 { categoryProduct?.products?.map( ( product: any ) =>
                 {
@@ -383,43 +449,7 @@ const ProductDetail = () =>
                     <p className=" text-[#23314b] text-[17px] font-semibold">Dành cho đơn hàng từ 500K trở lên</p>
                 </div>
             </div>
-            <div className="mt-[100px]">
-                <hr className="w-[1200px] ml-[150px]" />
-                <div className="flex justify-between ">
-                    <div className="py-5">
-                        <div className="flex justify-between space-x-[900px] ml-[150px] ">
-                            <p className="text-[22px] font-semibold text-[#23314b] ">Mô tả sản phẩm</p>
-                            <span
-                                className={ `inline-block  w-[30px] h-[30px] pt-[5px] pl-[5px]   bg-[#23314b1a] rounded-full group hover:bg-[#23314b] transform transition-transform duration-300 ${ arrange ? "rotate-180" : ""
-                                    }` }
-                                onClick={ handleTongleArrange }
-                            >
-                                <MdOutlineKeyboardArrowDown className="text-[#23314b] text-[20px] group-hover:text-white" />
-                            </span>
-                        </div>
-                        { arrange && (
-                            <div className={ `mt-5` }>
-                                <div className="flex items-center ">
-                                    <ul className="pl-[220px] list-disc">
-                                        <li className="text-[17px] font-extralight text-[#23314b] leading-[27px]">Chất vải Cotton co giãn 4 chiều và thoáng mát cả ngày dài</li>
-                                        <li className="text-[17px] font-extralight text-[#23314b] leading-[27px]">Phom Regular Fit tôn dáng, hợp với hầu hết kích thước cơ thể</li>
-                                        <li className="text-[17px] font-extralight text-[#23314b] leading-[27px]">Thoải mái giặt máy, không ra màu và không mất phom áo</li>
-                                    </ul>
-                                </div>
-                                <div className="ml-[200px]">
-                                    <img src="https://cdn.shopify.com/s/files/1/0685/2237/7522/files/polomanor_tshirt_detail_raglan_xam_dam_02_2048x2048.jpg?v=1684213776" alt="" />
-                                    <img src="https://cdn.shopify.com/s/files/1/0685/2237/7522/files/polomanor_tshirt_detail_raglan_xam_dam_03_2048x2048.jpg?v=1684213786" alt="" />
-                                    <img src="https://cdn.shopify.com/s/files/1/0685/2237/7522/files/polomanor_tshirt_detail_raglan_xam_dam_04_2048x2048.jpg?v=1684213797" alt="" />
-                                    <img src="https://cdn.shopify.com/s/files/1/0685/2237/7522/files/polomanor_tshirt_detail_raglan_xam_dam_05_2048x2048.jpg?v=1684213809" alt="" />
-                                    <img src="https://cdn.shopify.com/s/files/1/0685/2237/7522/files/polomanor_tshirt_detail_raglan_xam_dam_06_2048x2048.jpg?v=1684213820" alt="" />
-                                    <img src="https://cdn.shopify.com/s/files/1/0685/2237/7522/files/polomanor_tshirt_detail_raglan_xam_dam_07_2048x2048.jpg?v=1684213900" alt="" />
-                                </div>
-                            </div>
-                        ) }
-                    </div>
-                </div>
-                <hr className="w-[1200px] ml-[150px]" />
-            </div>
+            
             <div className="mt-[120px]">
                 <div className="">
                     {/* <div className="text-[216px] font-semibold text-center text-[#23314b] "> {`${progress}%`}</div> */ }

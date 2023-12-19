@@ -1,13 +1,15 @@
 
 import express, { Router } from "express"
 import { authMiddlware, isAdmin } from "../middleware/checkPermission"
-import { BlockUser, getAllUser, getOneUser, getUserByToken, logIn, register, removeUser, editAddressToken, unBlockUser, updateUser, verify, addToCart, emptyCart, updateOrderStatus, createOrder, applyCoupon, getOrders, getAllOrders, getUserCart, removeFromCart, getoneOrders, cancelOrderRequest, confirmCancelOrder, getCancelledOrders, getCancelledtrueOrders, increaseQuantity, decreaseQuantity, getWishList, removeWishList, cancleOrder, createPaymentUrl, vnpayReturn, getvoucher, findOrderByid, findOrderByPhone, updateUserAdmin } from "../controllers/auth"
+import { BlockUser, getAllUser, getOneUser, getUserByToken, logIn, register, removeUser, editAddressToken, unBlockUser, updateUser, verify, addToCart, emptyCart, updateOrderStatus, createOrder, applyCoupon, getOrders, getAllOrders, getUserCart, removeFromCart, getoneOrders, cancelOrderRequest, confirmCancelOrder, getCancelledOrders, getCancelledtrueOrders, increaseQuantity, decreaseQuantity, getWishList, removeWishList, cancleOrder, createPaymentUrl, vnpayReturn, getvoucher, findOrderByid, findOrderByPhone, updateUserAdmin, updateOrderStatusUser, getoneOrdersAdmin, logInAdmin } from "../controllers/auth"
 import { addTowishList, locproduct } from "../controllers/products"
 import { saveVoucherToUser } from "../controllers/voucher"
 
 const router = express.Router()
 router.post( '/register', register )
 router.post( '/login', logIn )
+router.post( '/loginAdmin', logInAdmin )
+
 router.post( '/add-to-cart', authMiddlware, addToCart );
 router.post( '/verify', verify )
 router.put( '/block-user/:id', authMiddlware, isAdmin, BlockUser )
@@ -21,9 +23,13 @@ router.put( '/updateUser', authMiddlware, updateUser )
 router.put( '/updateUserAdmin/:id', authMiddlware, updateUserAdmin )
 router.delete( "/emptyCart", authMiddlware, emptyCart )
 router.put( "/update-order/:id", authMiddlware, updateOrderStatus )
+router.put( "/update-orderuser/:id", authMiddlware, updateOrderStatusUser )
+
 router.post( "/creatOrder", authMiddlware, createOrder )
 router.get( "/getOrder", authMiddlware, getOrders )
 router.get( "/getoneOrder/:id", authMiddlware, getoneOrders )
+router.get( "/getoneOrderadmin/:id", authMiddlware, getoneOrdersAdmin )
+
 router.get( "/getcancletrueOrder", authMiddlware, getCancelledOrders )
 router.post( "/getStatusOrder", authMiddlware, getCancelledtrueOrders )
 router.post( "/getIdOrder", authMiddlware, findOrderByid )

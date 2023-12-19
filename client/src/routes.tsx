@@ -60,6 +60,7 @@ import ListBrand from "./pages/admin/brand/ListBrand";
 import CollectionPage from "./pages/website/CollectionPage";
 import Contact from "./pages/website/Policy/Contact";
 import EditUser from "./pages/admin/EditUser";
+import LoginAdmin from "./pages/admin/LoginAdmin";
 
 
 
@@ -73,7 +74,7 @@ const PriviteRouter = ({ isAuth }: any) => {
     const navigate = useNavigate()
     const [getUser] = useGetUserByTokenMutation();
 
-    const token = localStorage.getItem("token")
+    const token = localStorage.getItem("checktoken")
 
     useEffect(() => {
         if (token) {
@@ -98,7 +99,7 @@ const PriviteRouter = ({ isAuth }: any) => {
         }
     }, [getUser, token]);
 
-    return token ? <Outlet /> : <Navigate to={"/login"} />
+    return token ? <Outlet /> : <Navigate to={"/loginAdmin"} />
 
 }
 
@@ -208,6 +209,7 @@ export const router = createBrowserRouter([
 
     },
 
+    { path: 'LoginAdmin', element: <LoginAdmin /> },
 
 
 
@@ -220,6 +222,8 @@ export const router = createBrowserRouter([
                 children: [
                     { index: true, element: <Navigate to={'dashboard'} /> },
                     { path: 'dashboard', element: <ChartPage /> },
+
+                    { path: 'LoginAdmin', element: <LoginAdmin /> },
                     { path: 'category', element: <CategoryList /> },
                     { path: 'products', element: <ProductList /> },
                     { path: 'category/add', element: <AddCategory /> },
@@ -253,7 +257,6 @@ export const router = createBrowserRouter([
                     { path: 'brand', element: <ListBrand /> },
                     { path: 'brand/add', element: <AddBrand /> },
                     { path: 'brand/update/:_id', element: <UpdateBrand /> },
-
 
                 ]
             }
